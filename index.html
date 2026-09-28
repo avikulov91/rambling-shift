@@ -294,6 +294,32 @@
     0%, 100% { box-shadow: 0 0 0 0 rgba(255,43,31,0.55); transform: scale(1); }
     50% { box-shadow: 0 0 0 9px rgba(255,43,31,0); transform: scale(1.015); }
   }
+  .prep-modal-backdrop{
+    display:none; position:fixed; inset:0; background:rgba(8,5,4,0.72);
+    z-index:50; align-items:flex-end; justify-content:center;
+  }
+  .prep-modal-backdrop.active{ display:flex; }
+  .prep-modal-card{
+    width:100%; max-width:480px; max-height:82vh; overflow-y:auto;
+    background: var(--surface); border-top-left-radius:18px; border-top-right-radius:18px;
+    border: 1px solid var(--line); border-bottom:none;
+    padding:18px 18px 24px;
+    animation: prep-modal-up .2s ease-out;
+  }
+  @keyframes prep-modal-up{
+    from{ transform: translateY(24px); opacity:0; }
+    to{ transform: translateY(0); opacity:1; }
+  }
+  .prep-modal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .prep-modal-title{ font-size:17px; font-weight:800; color: var(--text); }
+  .prep-modal-close{
+    width:32px; height:32px; flex:none; border-radius:50%; border:none;
+    background: var(--surface-2); color: var(--text-dim); font-size:16px; line-height:1;
+  }
+  .prep-ing-name.prep-link{
+    color: var(--red); text-decoration: underline; text-underline-offset:2px; cursor:pointer;
+  }
+
 </style>
 </head>
 <body>
@@ -314,6 +340,65 @@
         <span>🧾 Заявка на закупку<span class="sub" id="procurement-sub" style="display:none;">Доступно по средам и воскресеньям</span></span>
         <span class="arrow">›</span>
       </button>
+      <button class="option-btn" id="go-cocktails"><span>🍸 Коктейли — технички</span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-infusions-ref"><span>🫙 Настойки — технички</span><span class="arrow">›</span></button>
+    </div>
+  </div>
+
+  <!-- SCREEN: infusions reference list -->
+  <div class="screen" id="screen-infusions-ref">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-infusions-ref" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">🫙 Настойки</div>
+    </div>
+    <div class="form-body">
+      <div class="field-block">
+        <input class="text-input" type="text" id="infusions-ref-search" placeholder="🔍 Поиск настойки по названию">
+      </div>
+      <div id="infusions-ref-list"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN: infusion detail (техничка) -->
+  <div class="screen" id="screen-infusion-ref-detail">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-infusion-ref-detail" style="padding:0 0 10px;">← К списку настоек</div>
+      <div class="top-bar-title" id="infusion-ref-detail-title">🫙 Настойка</div>
+    </div>
+    <div class="form-body" id="infusion-ref-detail-body"></div>
+  </div>
+
+  <!-- SCREEN: cocktails list -->
+  <div class="screen" id="screen-cocktails">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-cocktails" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">🍸 Коктейли</div>
+    </div>
+    <div class="form-body">
+      <div class="field-block">
+        <input class="text-input" type="text" id="cocktails-search" placeholder="🔍 Поиск коктейля по названию">
+      </div>
+      <div id="cocktails-list"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN: cocktail detail (техничка) -->
+  <div class="screen" id="screen-cocktail-detail">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-cocktail-detail" style="padding:0 0 10px;">← К списку коктейлей</div>
+      <div class="top-bar-title" id="cocktail-detail-title">🍸 Коктейль</div>
+    </div>
+    <div class="form-body" id="cocktail-detail-body"></div>
+  </div>
+
+  <!-- MODAL: заготовка (техничка для бара) -->
+  <div class="prep-modal-backdrop" id="prep-modal-backdrop">
+    <div class="prep-modal-card">
+      <div class="prep-modal-head">
+        <div class="prep-modal-title" id="prep-modal-title">🧪 Заготовка</div>
+        <button type="button" class="prep-modal-close" id="prep-modal-close">×</button>
+      </div>
+      <div id="prep-modal-body"></div>
     </div>
   </div>
 
@@ -1161,6 +1246,7601 @@ ${Math.abs(diff) < 0.01 ? "✅ Разница: 0" : `⚠️ Разница: ${(d
 
 document.getElementById("go-cash-menu").addEventListener("click", () => showScreen("screen-menu"));
 document.getElementById("back-from-menu").addEventListener("click", () => showScreen("screen-root"));
+
+/* ---------- КОКТЕЙЛИ (справочник техничек) ---------- */
+// Только для чтения бартендерами — ни закупки, ни отправки в Telegram, просто рецепт под рукой.
+// Каждая позиция: name, icon (эмодзи бокала), glass/method/garnish (необяз.),
+// ingredients: [{name, amount}] — порция на 1 коктейль,
+// premix: {note, items:[{name,amount}], yield} | null — заготовка-батч для бара,
+// steps: ["шаг 1", "шаг 2", ...]
+const COCKTAIL_RECIPES = [
+  {
+    "name": "Negroni",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "stir & strain",
+    "garnish": "цедра апельсина",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "30 ml"
+      },
+      {
+        "name": "red bitter",
+        "amount": "30 ml"
+      },
+      {
+        "name": "sweet vermouth",
+        "amount": "30 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "330 ml"
+        },
+        {
+          "name": "red bitter",
+          "amount": "330 ml"
+        },
+        {
+          "name": "sweet vermouth",
+          "amount": "330 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Boulevardier scotch",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "stir & strain",
+    "garnish": "цедра апельсина",
+    "ingredients": [
+      {
+        "name": "scotch house",
+        "amount": "30 ml"
+      },
+      {
+        "name": "red bitter",
+        "amount": "30 ml"
+      },
+      {
+        "name": "sweet vermouth",
+        "amount": "30 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "scotch house",
+          "amount": "330 ml"
+        },
+        {
+          "name": "red bitter",
+          "amount": "330 ml"
+        },
+        {
+          "name": "sweet vermouth",
+          "amount": "330 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Boulevardier bourbon",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "stir & strain",
+    "garnish": "цедра апельсина",
+    "ingredients": [
+      {
+        "name": "BOURBON house",
+        "amount": "30 ml"
+      },
+      {
+        "name": "red bitter",
+        "amount": "30 ml"
+      },
+      {
+        "name": "sweet vermouth",
+        "amount": "30 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "BOURBON house",
+          "amount": "330 ml"
+        },
+        {
+          "name": "red bitter",
+          "amount": "330 ml"
+        },
+        {
+          "name": "sweet vermouth",
+          "amount": "330 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Negroni White",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "stir & strain",
+    "garnish": "цедра лимона",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "30 ml"
+      },
+      {
+        "name": "suze",
+        "amount": "30 ml"
+      },
+      {
+        "name": "Lillet",
+        "amount": "30 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "330 ml"
+        },
+        {
+          "name": "suze",
+          "amount": "330 ml"
+        },
+        {
+          "name": "Lillet",
+          "amount": "330 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Smash cocktail",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "shake",
+    "garnish": "ситуативно",
+    "ingredients": [
+      {
+        "name": "lemon juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "gin house",
+        "amount": "50 ml"
+      },
+      {
+        "name": "simple syrup",
+        "amount": "15 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 15 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "750 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "225 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "65 ml премикс + 20 ml lemon juice",
+      "shake"
+    ]
+  },
+  {
+    "name": "White Russian",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "bild",
+    "garnish": "тертый шоколад",
+    "ingredients": [
+      {
+        "name": "vodka house",
+        "amount": "35 ml"
+      },
+      {
+        "name": "Coffee Liqueur",
+        "amount": "30 ml"
+      },
+      {
+        "name": "cream",
+        "amount": "30 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 15 порций",
+      "items": [
+        {
+          "name": "vodka house",
+          "amount": "525 ml"
+        },
+        {
+          "name": "Coffee Liqueur",
+          "amount": "450 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "65 ml премикс + 30 ml cream"
+    ]
+  },
+  {
+    "name": "Black Russian",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "bild",
+    "garnish": "долька шоколада",
+    "ingredients": [
+      {
+        "name": "vodka house",
+        "amount": "40 ml"
+      },
+      {
+        "name": "Coffee Liqueur",
+        "amount": "40 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 12 порций",
+      "items": [
+        {
+          "name": "vodka house",
+          "amount": "480 ml"
+        },
+        {
+          "name": "Coffee Liqueur",
+          "amount": "480 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "80 ml премикс"
+    ]
+  },
+  {
+    "name": "Whiskey Sour",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "shake",
+    "garnish": "цедра лимона, ангостура",
+    "ingredients": [
+      {
+        "name": "simple syrup",
+        "amount": "15 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "30 ml"
+      },
+      {
+        "name": "BOURBON house",
+        "amount": "50 ml"
+      },
+      {
+        "name": "bouble drops",
+        "amount": "1 pt"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 15 порций",
+      "items": [
+        {
+          "name": "BOURBON house",
+          "amount": "750 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "225 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "65 ml премикс + 30 ml lemon juice + bouble drops",
+      "shake"
+    ]
+  },
+  {
+    "name": "Milano-Torino",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "bild",
+    "garnish": "цедра апельсина",
+    "ingredients": [
+      {
+        "name": "red bitter",
+        "amount": "40 ml"
+      },
+      {
+        "name": "sweet vermouth",
+        "amount": "40 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 12 порций",
+      "items": [
+        {
+          "name": "red bitter",
+          "amount": "480 ml"
+        },
+        {
+          "name": "sweet vermouth",
+          "amount": "480 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "80 ml премикс"
+    ]
+  },
+  {
+    "name": "Mint Julep",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "bild",
+    "garnish": "мята",
+    "ingredients": [
+      {
+        "name": "simple syrup",
+        "amount": "10 ml"
+      },
+      {
+        "name": "BOURBON house",
+        "amount": "50 ml"
+      },
+      {
+        "name": "мята",
+        "amount": "1 pt"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 16 порций",
+      "items": [
+        {
+          "name": "BOURBON house",
+          "amount": "800 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "160 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "60 ml премикс + мята"
+    ]
+  },
+  {
+    "name": "Porto Ronco",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "bild",
+    "garnish": "цедра апельсина",
+    "ingredients": [
+      {
+        "name": "porto ruby",
+        "amount": "30 ml"
+      },
+      {
+        "name": "dark rum",
+        "amount": "40 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "porto ruby",
+          "amount": "420 ml"
+        },
+        {
+          "name": "dark rum",
+          "amount": "560 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс"
+    ]
+  },
+  {
+    "name": "Americano",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "bild",
+    "garnish": "цедра апельсина",
+    "ingredients": [
+      {
+        "name": "red bitter",
+        "amount": "30 ml"
+      },
+      {
+        "name": "soda water",
+        "amount": "60 ml"
+      },
+      {
+        "name": "sweet vermouth",
+        "amount": "30 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 16 порций",
+      "items": [
+        {
+          "name": "red bitter",
+          "amount": "480 ml"
+        },
+        {
+          "name": "sweet vermouth",
+          "amount": "480 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "60 ml премикс",
+      "top soda water"
+    ]
+  },
+  {
+    "name": "Negroni Sbagliato",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "bild",
+    "garnish": "цедра апельсина",
+    "ingredients": [
+      {
+        "name": "red bitter",
+        "amount": "30 ml"
+      },
+      {
+        "name": "Sparkling wine",
+        "amount": "60 ml"
+      },
+      {
+        "name": "sweet vermouth",
+        "amount": "30 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 16 порций",
+      "items": [
+        {
+          "name": "red bitter",
+          "amount": "480 ml"
+        },
+        {
+          "name": "sweet vermouth",
+          "amount": "480 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "60 ml премикс",
+      "top Sparkling wine"
+    ]
+  },
+  {
+    "name": "French Connection",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "bild",
+    "garnish": "миндаль",
+    "ingredients": [
+      {
+        "name": "amaretto",
+        "amount": "40 ml"
+      },
+      {
+        "name": "brandy",
+        "amount": "35 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 13 порций",
+      "items": [
+        {
+          "name": "amaretto",
+          "amount": "520 ml"
+        },
+        {
+          "name": "brandy",
+          "amount": "455 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "75 ml премикс"
+    ]
+  },
+  {
+    "name": "Godfather",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "bild",
+    "garnish": "цедра апельсина",
+    "ingredients": [
+      {
+        "name": "amaretto",
+        "amount": "40 ml"
+      },
+      {
+        "name": "scotch house",
+        "amount": "40 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 12 порций",
+      "items": [
+        {
+          "name": "amaretto",
+          "amount": "480 ml"
+        },
+        {
+          "name": "scotch house",
+          "amount": "480 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "80 ml премикс"
+    ]
+  },
+  {
+    "name": "Godmother",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "bild",
+    "garnish": "цедра апельсина",
+    "ingredients": [
+      {
+        "name": "vodka house",
+        "amount": "35 ml"
+      },
+      {
+        "name": "amaretto",
+        "amount": "35 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "vodka house",
+          "amount": "490 ml"
+        },
+        {
+          "name": "amaretto",
+          "amount": "490 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс"
+    ]
+  },
+  {
+    "name": "Cuba Libre",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "bild",
+    "garnish": "лайм",
+    "ingredients": [
+      {
+        "name": "lime juice",
+        "amount": "15 ml"
+      },
+      {
+        "name": "dark rum",
+        "amount": "50 ml"
+      },
+      {
+        "name": "Coca Cola",
+        "amount": "top"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 20 порций",
+      "items": [
+        {
+          "name": "dark rum",
+          "amount": "1000 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "50 ml премикс + 15 ml lime",
+      "top Coca Cola"
+    ]
+  },
+  {
+    "name": "Acid Anthony",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "shake",
+    "garnish": "мята",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "60 ml"
+      },
+      {
+        "name": "kiwi puree",
+        "amount": "30 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "30 ml"
+      },
+      {
+        "name": "bubble drops",
+        "amount": "1 pt"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "660 ml"
+        },
+        {
+          "name": "kiwi puree",
+          "amount": "330 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс + 30 ml lemon + bubble drops",
+      "shake"
+    ]
+  },
+  {
+    "name": "Rob Roy",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "garnish": "вишня",
+    "ingredients": [
+      {
+        "name": "scotch house",
+        "amount": "50 ml"
+      },
+      {
+        "name": "Angostura",
+        "amount": "2 ml"
+      },
+      {
+        "name": "sweet vermouth",
+        "amount": "25 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 12 порций",
+      "items": [
+        {
+          "name": "scotch house",
+          "amount": "600 ml"
+        },
+        {
+          "name": "sweet vermouth",
+          "amount": "300 ml"
+        },
+        {
+          "name": "Angostura",
+          "amount": "24 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "77 ml премикс",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Toreador",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "цедра лимона",
+    "ingredients": [
+      {
+        "name": "tequila",
+        "amount": "60 ml"
+      },
+      {
+        "name": "Apricot Liqueur",
+        "amount": "20 ml"
+      },
+      {
+        "name": "lime juice",
+        "amount": "20 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 12 порций",
+      "items": [
+        {
+          "name": "tequila",
+          "amount": "720 ml"
+        },
+        {
+          "name": "Apricot Liqueur",
+          "amount": "240 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "80 ml премикс + 20 ml lime",
+      "shake"
+    ]
+  },
+  {
+    "name": "Martinez",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "garnish": "вишня",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "50 ml"
+      },
+      {
+        "name": "Maraschino",
+        "amount": "15 ml"
+      },
+      {
+        "name": "sweet vermouth",
+        "amount": "30 ml"
+      },
+      {
+        "name": "orange bitter",
+        "amount": "2 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 10 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "500 ml"
+        },
+        {
+          "name": "Maraschino",
+          "amount": "150 ml"
+        },
+        {
+          "name": "sweet vermouth",
+          "amount": "300 ml"
+        },
+        {
+          "name": "orange bitter",
+          "amount": "20 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "97 ml премикс",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Blood and Sand",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "цедра апельсина",
+    "ingredients": [
+      {
+        "name": "scotch house",
+        "amount": "20 ml"
+      },
+      {
+        "name": "orange juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "Cherry Liqueur",
+        "amount": "20 ml"
+      },
+      {
+        "name": "sweet vermouth",
+        "amount": "20 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 16 порций",
+      "items": [
+        {
+          "name": "scotch house",
+          "amount": "320 ml"
+        },
+        {
+          "name": "Cherry Liqueur",
+          "amount": "320 ml"
+        },
+        {
+          "name": "sweet vermouth",
+          "amount": "320 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "60 ml премикс + 20 ml orange juice",
+      "shake"
+    ]
+  },
+  {
+    "name": "Golden Dream",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "маршмелоу",
+    "ingredients": [
+      {
+        "name": "Triple Sec",
+        "amount": "20 ml"
+      },
+      {
+        "name": "orange juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "cream",
+        "amount": "20 ml"
+      },
+      {
+        "name": "vodka house",
+        "amount": "20 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 25 порций",
+      "items": [
+        {
+          "name": "Triple Sec",
+          "amount": "500 ml"
+        },
+        {
+          "name": "vodka house",
+          "amount": "500 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "40 ml премикс + 20 ml orange juice + 20 ml cream",
+      "shake"
+    ]
+  },
+  {
+    "name": "Brandy Alexander",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "мускат",
+    "ingredients": [
+      {
+        "name": "brandy",
+        "amount": "30 ml"
+      },
+      {
+        "name": "Coffee Liqueur",
+        "amount": "20 ml"
+      },
+      {
+        "name": "cream",
+        "amount": "20 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 20 порций",
+      "items": [
+        {
+          "name": "brandy",
+          "amount": "600 ml"
+        },
+        {
+          "name": "Coffee Liqueur",
+          "amount": "400 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "50 ml премикс + 20 ml cream",
+      "shake"
+    ]
+  },
+  {
+    "name": "El Presidente",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "garnish": "цедра апельсина",
+    "ingredients": [
+      {
+        "name": "dry vermouth",
+        "amount": "30 ml"
+      },
+      {
+        "name": "Triple Sec",
+        "amount": "20 ml"
+      },
+      {
+        "name": "dark rum",
+        "amount": "50 ml"
+      },
+      {
+        "name": "сироп гренадин",
+        "amount": "5 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 9 порций",
+      "items": [
+        {
+          "name": "dry vermouth",
+          "amount": "270 ml"
+        },
+        {
+          "name": "Triple Sec",
+          "amount": "180 ml"
+        },
+        {
+          "name": "dark rum",
+          "amount": "450 ml"
+        },
+        {
+          "name": "сироп гренадин",
+          "amount": "45 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "105 ml премикс",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Gimlet",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "garnish": "цедра лайма",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "40 ml"
+      },
+      {
+        "name": "lime cordial",
+        "amount": "60 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 12 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "600 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "50 ml gin + 30 ml lime cordial",
+      "stir & straint"
+    ]
+  },
+  {
+    "name": "White Lady",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "цедра лимона",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "50 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "Triple Sec",
+        "amount": "15 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 15 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "750 ml"
+        },
+        {
+          "name": "Triple Sec",
+          "amount": "225 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "65 ml премикс + 20 ml lemon",
+      "shake"
+    ]
+  },
+  {
+    "name": "Old Cuban",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "мята",
+    "ingredients": [
+      {
+        "name": "lime juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "simple syrup",
+        "amount": "25 ml"
+      },
+      {
+        "name": "Sparkling wine",
+        "amount": "top"
+      },
+      {
+        "name": "white rum",
+        "amount": "40 ml"
+      },
+      {
+        "name": "мята",
+        "amount": "1 pt"
+      },
+      {
+        "name": "angostura",
+        "amount": "2 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 15 порций",
+      "items": [
+        {
+          "name": "white rum",
+          "amount": "600 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "375 ml"
+        },
+        {
+          "name": "angostura",
+          "amount": "30 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "65 ml премикс + 20 ml lime",
+      "shake",
+      "top Sparkling"
+    ]
+  },
+  {
+    "name": "Hemingway Especial",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "цедра",
+    "ingredients": [
+      {
+        "name": "Maraschino",
+        "amount": "15 ml"
+      },
+      {
+        "name": "simple syrup",
+        "amount": "5 ml"
+      },
+      {
+        "name": "white rum",
+        "amount": "50 ml"
+      },
+      {
+        "name": "lime juice",
+        "amount": "20 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "white rum",
+          "amount": "700 ml"
+        },
+        {
+          "name": "Maraschino",
+          "amount": "210 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "70 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс + 20 ml lime",
+      "shake"
+    ]
+  },
+  {
+    "name": "Margarita",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "цедра лайма",
+    "ingredients": [
+      {
+        "name": "tequila",
+        "amount": "50 ml"
+      },
+      {
+        "name": "Triple Sec",
+        "amount": "20 ml"
+      },
+      {
+        "name": "lime juice",
+        "amount": "20 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "tequila",
+          "amount": "700 ml"
+        },
+        {
+          "name": "Triple Sec",
+          "amount": "280 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс + 20 ml lime",
+      "shake"
+    ]
+  },
+  {
+    "name": "Vesper",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "garnish": "цедра лимона",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "60 ml"
+      },
+      {
+        "name": "vodka house",
+        "amount": "20 ml"
+      },
+      {
+        "name": "Lillet",
+        "amount": "10 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "660 ml"
+        },
+        {
+          "name": "vodka house",
+          "amount": "220 ml"
+        },
+        {
+          "name": "Lillet",
+          "amount": "110 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Dry Martini",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "garnish": "оливка",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "60 ml"
+      },
+      {
+        "name": "dry vermouth",
+        "amount": "40 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 10 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "600 ml"
+        },
+        {
+          "name": "dry vermouth",
+          "amount": "400 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "100 ml премикс",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Grasshopper",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "мята",
+    "ingredients": [
+      {
+        "name": "cream",
+        "amount": "30 ml"
+      },
+      {
+        "name": "branca menta",
+        "amount": "30 ml"
+      },
+      {
+        "name": "cacao white liquor",
+        "amount": "30 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 16 порций",
+      "items": [
+        {
+          "name": "branca menta",
+          "amount": "480 ml"
+        },
+        {
+          "name": "cacao white liquor",
+          "amount": "480 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "60 ml премикс + 30 ml cream",
+      "shake"
+    ]
+  },
+  {
+    "name": "Manhattan",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "garnish": "вишня",
+    "ingredients": [
+      {
+        "name": "BOURBON house",
+        "amount": "50 ml"
+      },
+      {
+        "name": "sweet vermouth",
+        "amount": "25 ml"
+      },
+      {
+        "name": "Angostura",
+        "amount": "2 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 12 порций",
+      "items": [
+        {
+          "name": "BOURBON house",
+          "amount": "600 ml"
+        },
+        {
+          "name": "sweet vermouth",
+          "amount": "300 ml"
+        },
+        {
+          "name": "Angostura",
+          "amount": "24 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "77 ml премикс",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Sidecar",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "цедра лимона",
+    "ingredients": [
+      {
+        "name": "brandy",
+        "amount": "50 ml"
+      },
+      {
+        "name": "Triple Sec",
+        "amount": "20 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "20 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "brandy",
+          "amount": "700 ml"
+        },
+        {
+          "name": "Triple Sec",
+          "amount": "280 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс + 20 ml lemon",
+      "shake"
+    ]
+  },
+  {
+    "name": "Adonis",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "garnish": "цедра апельсина",
+    "ingredients": [
+      {
+        "name": "Jerez fino",
+        "amount": "40 ml"
+      },
+      {
+        "name": "sweet vermouth",
+        "amount": "40 ml"
+      },
+      {
+        "name": "orange bitter",
+        "amount": "2 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 12 порций",
+      "items": [
+        {
+          "name": "Jerez fino",
+          "amount": "480 ml"
+        },
+        {
+          "name": "sweet vermouth",
+          "amount": "480 ml"
+        },
+        {
+          "name": "orange bitter",
+          "amount": "24 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "82 ml премикс",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Between the Sheets",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "цедра лимона",
+    "ingredients": [
+      {
+        "name": "brandy",
+        "amount": "30 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "Triple Sec",
+        "amount": "30 ml"
+      },
+      {
+        "name": "white rum",
+        "amount": "30 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "brandy",
+          "amount": "330 ml"
+        },
+        {
+          "name": "Triple Sec",
+          "amount": "330 ml"
+        },
+        {
+          "name": "white rum",
+          "amount": "330 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс + 20 ml lemon",
+      "shake"
+    ]
+  },
+  {
+    "name": "Kamikaze",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "цедра лимона",
+    "ingredients": [
+      {
+        "name": "vodka house",
+        "amount": "30 ml"
+      },
+      {
+        "name": "Triple Sec",
+        "amount": "30 ml"
+      },
+      {
+        "name": "lime juice",
+        "amount": "30 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 16 порций",
+      "items": [
+        {
+          "name": "vodka house",
+          "amount": "480 ml"
+        },
+        {
+          "name": "Triple Sec",
+          "amount": "480 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "60 ml премикс + 30 ml lime",
+      "shake"
+    ]
+  },
+  {
+    "name": "Clover Club",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "сухоцвет",
+    "ingredients": [
+      {
+        "name": "lemon juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "сироп малина",
+        "amount": "15 ml"
+      },
+      {
+        "name": "gin house",
+        "amount": "45 ml"
+      },
+      {
+        "name": "bubble drops",
+        "amount": "1 pt"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 16 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "720 ml"
+        },
+        {
+          "name": "сироп малина",
+          "amount": "240 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "60 ml премикс + 20 ml lemon + bubble drops",
+      "shake"
+    ]
+  },
+  {
+    "name": "Pedro Manhattan",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "garnish": "вишня",
+    "ingredients": [
+      {
+        "name": "Jerez",
+        "amount": "20 ml"
+      },
+      {
+        "name": "BOURBON house",
+        "amount": "50 ml"
+      },
+      {
+        "name": "angostura",
+        "amount": "2 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 13 порций",
+      "items": [
+        {
+          "name": "BOURBON house",
+          "amount": "650 ml"
+        },
+        {
+          "name": "Jerez",
+          "amount": "260 ml"
+        },
+        {
+          "name": "angostura",
+          "amount": "26 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "72 ml премикс",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Angel Face",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "garnish": "яблоко",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "30 ml"
+      },
+      {
+        "name": "Apricot Liqueur",
+        "amount": "30 ml"
+      },
+      {
+        "name": "calvados",
+        "amount": "30 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "330 ml"
+        },
+        {
+          "name": "Apricot Liqueur",
+          "amount": "330 ml"
+        },
+        {
+          "name": "calvados",
+          "amount": "330 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Corpse Reviver #2",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "цедра",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "30 ml"
+      },
+      {
+        "name": "Triple Sec",
+        "amount": "30 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "30 ml"
+      },
+      {
+        "name": "Lillet",
+        "amount": "30 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "330 ml"
+        },
+        {
+          "name": "Triple Sec",
+          "amount": "330 ml"
+        },
+        {
+          "name": "Lillet",
+          "amount": "330 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс + 30 ml lemon",
+      "shake"
+    ]
+  },
+  {
+    "name": "Daiquiri",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "цедра лайма",
+    "ingredients": [
+      {
+        "name": "simple syrup",
+        "amount": "15 ml"
+      },
+      {
+        "name": "white rum",
+        "amount": "50 ml"
+      },
+      {
+        "name": "lime juice",
+        "amount": "25 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 15 порций",
+      "items": [
+        {
+          "name": "white rum",
+          "amount": "750 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "225 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "65 ml премикс + 25 ml lime",
+      "shake"
+    ]
+  },
+  {
+    "name": "Hanky Panky",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "garnish": "цедра лимона",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "50 ml"
+      },
+      {
+        "name": "fernet branko",
+        "amount": "10 ml"
+      },
+      {
+        "name": "sweet vermouth",
+        "amount": "25 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "550 ml"
+        },
+        {
+          "name": "fernet branko",
+          "amount": "110 ml"
+        },
+        {
+          "name": "sweet vermouth",
+          "amount": "275 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "85 ml премикс",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Aviation",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "вишня",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "50 ml"
+      },
+      {
+        "name": "Maraschino",
+        "amount": "15 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "violet",
+        "amount": "10 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 13 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "650 ml"
+        },
+        {
+          "name": "Maraschino",
+          "amount": "195 ml"
+        },
+        {
+          "name": "violet",
+          "amount": "130 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "75 ml премикс + 20 ml lemon",
+      "shake"
+    ]
+  },
+  {
+    "name": "PornStar Martini",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "шот игристого",
+    "ingredients": [
+      {
+        "name": "vodka house",
+        "amount": "30 ml"
+      },
+      {
+        "name": "агрохаб пюре маракуйя",
+        "amount": "30 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "10 ml"
+      },
+      {
+        "name": "сироп ваниль",
+        "amount": "15 ml"
+      },
+      {
+        "name": "Sparkling wine",
+        "amount": "50 ml"
+      },
+      {
+        "name": "bubble drops",
+        "amount": "1 pt"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 22 порции",
+      "items": [
+        {
+          "name": "vodka house",
+          "amount": "660 ml"
+        },
+        {
+          "name": "агрохаб пюре маракуйя",
+          "amount": "660 ml"
+        },
+        {
+          "name": "сироп ваниль",
+          "amount": "330 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "45 ml премикс + 10 ml lemon + bubble drops",
+      "shake",
+      "отдельно Sparkling"
+    ]
+  },
+  {
+    "name": "Paper Plane",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "цедра апельсина",
+    "ingredients": [
+      {
+        "name": "BOURBON house",
+        "amount": "30 ml"
+      },
+      {
+        "name": "aperol house",
+        "amount": "30 ml"
+      },
+      {
+        "name": "amaro manfedi",
+        "amount": "30 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "30 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "BOURBON house",
+          "amount": "330 ml"
+        },
+        {
+          "name": "aperol house",
+          "amount": "330 ml"
+        },
+        {
+          "name": "amaro manfedi",
+          "amount": "330 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс + 30 ml lemon",
+      "shake"
+    ]
+  },
+  {
+    "name": "Lillet Spritz",
+    "icon": "🍷",
+    "glass": "wine glass",
+    "method": "bild",
+    "garnish": "апельсин",
+    "ingredients": [
+      {
+        "name": "Lillet",
+        "amount": "70 ml"
+      },
+      {
+        "name": "Sparkling wine",
+        "amount": "90 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "Lillet",
+          "amount": "980 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс",
+      "top Sparkling"
+    ]
+  },
+  {
+    "name": "Gin Fizz",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "shake",
+    "garnish": "цедра лимона",
+    "ingredients": [
+      {
+        "name": "lemon juice",
+        "amount": "30 ml"
+      },
+      {
+        "name": "gin house",
+        "amount": "50 ml"
+      },
+      {
+        "name": "soda water",
+        "amount": "top"
+      },
+      {
+        "name": "simple syrup",
+        "amount": "15 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 15 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "750 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "225 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "65 ml премикс + 30 ml lemon",
+      "shake",
+      "top soda"
+    ]
+  },
+  {
+    "name": "Fog Cutter",
+    "icon": "🌺",
+    "glass": "Tiki",
+    "method": "shake",
+    "garnish": "мята",
+    "ingredients": [
+      {
+        "name": "brandy",
+        "amount": "20 ml"
+      },
+      {
+        "name": "gin house",
+        "amount": "10 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "50 ml"
+      },
+      {
+        "name": "orange juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "Jerez",
+        "amount": "10 ml"
+      },
+      {
+        "name": "сироп миндаль",
+        "amount": "15 ml"
+      },
+      {
+        "name": "white rum",
+        "amount": "20 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 13 порций",
+      "items": [
+        {
+          "name": "brandy",
+          "amount": "260 ml"
+        },
+        {
+          "name": "gin house",
+          "amount": "130 ml"
+        },
+        {
+          "name": "Jerez",
+          "amount": "130 ml"
+        },
+        {
+          "name": "сироп миндаль",
+          "amount": "195 ml"
+        },
+        {
+          "name": "white rum",
+          "amount": "260 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "75 ml премикс + 50 ml lemon + 20 ml orange",
+      "shake"
+    ]
+  },
+  {
+    "name": "Zombie",
+    "icon": "🌺",
+    "glass": "Tiki",
+    "method": "shake",
+    "garnish": "мята, вишня",
+    "ingredients": [
+      {
+        "name": "ananas juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "white rum",
+        "amount": "30 ml"
+      },
+      {
+        "name": "stroh 80",
+        "amount": "10 ml"
+      },
+      {
+        "name": "lime juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "orange juice",
+        "amount": "50 ml"
+      },
+      {
+        "name": "сироп гренадин",
+        "amount": "30 ml"
+      },
+      {
+        "name": "dark rum",
+        "amount": "30 ml"
+      },
+      {
+        "name": "сироп корица",
+        "amount": "10 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "white rum",
+          "amount": "420 ml"
+        },
+        {
+          "name": "stroh",
+          "amount": "140 ml"
+        },
+        {
+          "name": "dark rum",
+          "amount": "420 ml"
+        },
+        {
+          "name": "сироп гренадин",
+          "amount": "420 ml"
+        },
+        {
+          "name": "сироп корица",
+          "amount": "140 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс + 20 ml lime + 50 ml orange + 20 ml ananas",
+      "shake"
+    ]
+  },
+  {
+    "name": "Jungle Bird",
+    "icon": "🌺",
+    "glass": "Tiki",
+    "method": "shake",
+    "garnish": "мята",
+    "ingredients": [
+      {
+        "name": "lime juice",
+        "amount": "15 ml"
+      },
+      {
+        "name": "simple syrup",
+        "amount": "15 ml"
+      },
+      {
+        "name": "ananas juice",
+        "amount": "50 ml"
+      },
+      {
+        "name": "dark rum",
+        "amount": "45 ml"
+      },
+      {
+        "name": "red bitter",
+        "amount": "25 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "dark rum",
+          "amount": "630 ml"
+        },
+        {
+          "name": "red bitter",
+          "amount": "350 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "210 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "85 ml премикс + 15 ml lime + 50 ml ananas",
+      "shake"
+    ]
+  },
+  {
+    "name": "Moktaile",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "shake",
+    "garnish": "опционально",
+    "ingredients": [
+      {
+        "name": "soda water",
+        "amount": "top"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "30 ml"
+      },
+      {
+        "name": "пюре",
+        "amount": "15 ml"
+      },
+      {
+        "name": "сироп",
+        "amount": "15 ml"
+      }
+    ],
+    "premix": null,
+    "steps": [
+      "пюре + сироп + lemon",
+      "shake",
+      "top soda"
+    ]
+  },
+  {
+    "name": "Gin Tonic",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "bild",
+    "garnish": "лайм",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "40 ml"
+      },
+      {
+        "name": "tonic",
+        "amount": "top"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 25 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "1000 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "40 ml премикс",
+      "top tonic"
+    ]
+  },
+  {
+    "name": "Ron Collins",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "bild",
+    "garnish": "лайм",
+    "ingredients": [
+      {
+        "name": "lime juice",
+        "amount": "25 ml"
+      },
+      {
+        "name": "simple syrup",
+        "amount": "20 ml"
+      },
+      {
+        "name": "white rum",
+        "amount": "50 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "white rum",
+          "amount": "700 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "280 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс + 25 ml lime",
+      "top soda"
+    ]
+  },
+  {
+    "name": "French 75",
+    "icon": "🍷",
+    "glass": "wine glass",
+    "method": "shake",
+    "garnish": "цедра",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "30 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "15 ml"
+      },
+      {
+        "name": "simple syrup",
+        "amount": "15 ml"
+      },
+      {
+        "name": "Sparkling wine",
+        "amount": "100 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 16 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "480 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "240 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "45 ml премикс + 15 ml lemon",
+      "top Sparkling ⸻"
+    ]
+  },
+  {
+    "name": "Mojito",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "bild",
+    "garnish": "лайм, мята",
+    "ingredients": [
+      {
+        "name": "lime juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "simple syrup",
+        "amount": "20 ml"
+      },
+      {
+        "name": "soda water",
+        "amount": "top"
+      },
+      {
+        "name": "white rum",
+        "amount": "50 ml"
+      },
+      {
+        "name": "мята",
+        "amount": "1 pt"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "white rum",
+          "amount": "700 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "280 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс + 20 ml lime + мята",
+      "top soda"
+    ]
+  },
+  {
+    "name": "Muay Thai",
+    "icon": "🌺",
+    "glass": "Tiki",
+    "method": "shake",
+    "garnish": "мята",
+    "ingredients": [
+      {
+        "name": "Triple Sec",
+        "amount": "20 ml"
+      },
+      {
+        "name": "lime juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "dark rum",
+        "amount": "30 ml"
+      },
+      {
+        "name": "сироп миндаль",
+        "amount": "15 ml"
+      },
+      {
+        "name": "white rum",
+        "amount": "30 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "Triple Sec",
+          "amount": "280 ml"
+        },
+        {
+          "name": "dark rum",
+          "amount": "420 ml"
+        },
+        {
+          "name": "white rum",
+          "amount": "420 ml"
+        },
+        {
+          "name": "сироп миндаль",
+          "amount": "210 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "95 ml премикс + 20 ml lime",
+      "shake"
+    ]
+  },
+  {
+    "name": "Bloody Mary",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "bild",
+    "garnish": "опционально",
+    "ingredients": [
+      {
+        "name": "vodka house",
+        "amount": "30 ml"
+      },
+      {
+        "name": "настойка мэри",
+        "amount": "70 ml"
+      },
+      {
+        "name": "tomato juice",
+        "amount": "70 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 10 порций",
+      "items": [
+        {
+          "name": "vodka house",
+          "amount": "300 ml"
+        },
+        {
+          "name": "настойка мэри",
+          "amount": "700 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "100 ml премикс + 70 ml tomato"
+    ]
+  },
+  {
+    "name": "Kir Royale",
+    "icon": "🍷",
+    "glass": "wine glass",
+    "method": "bild",
+    "garnish": "вишня",
+    "ingredients": [
+      {
+        "name": "Sparkling wine",
+        "amount": "120 ml"
+      },
+      {
+        "name": "cassis",
+        "amount": "50 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 20 порций",
+      "items": [
+        {
+          "name": "cassis",
+          "amount": "1000 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "50 ml премикс",
+      "top Sparkling"
+    ]
+  },
+  {
+    "name": "Vodka Tonic",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "bild",
+    "garnish": "лимон",
+    "ingredients": [
+      {
+        "name": "vodka house",
+        "amount": "60 ml"
+      },
+      {
+        "name": "tonic",
+        "amount": "top"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 16 порций",
+      "items": [
+        {
+          "name": "vodka house",
+          "amount": "960 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "60 ml премикс",
+      "top tonic"
+    ]
+  },
+  {
+    "name": "Tequila Sunrise",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "bild",
+    "garnish": "апельсин",
+    "ingredients": [
+      {
+        "name": "tequila",
+        "amount": "50 ml"
+      },
+      {
+        "name": "orange juice",
+        "amount": "140 ml"
+      },
+      {
+        "name": "сироп гренадин",
+        "amount": "10 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 20 порций",
+      "items": [
+        {
+          "name": "tequila",
+          "amount": "1000 ml"
+        },
+        {
+          "name": "сироп гренадин",
+          "amount": "200 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "60 ml премикс + 140 ml orange"
+    ]
+  },
+  {
+    "name": "Spritz Mix",
+    "icon": "🍷",
+    "glass": "wine glass",
+    "method": "bild",
+    "garnish": "опционально",
+    "ingredients": [
+      {
+        "name": "Sparkling wine",
+        "amount": "80 ml"
+      },
+      {
+        "name": "soda water",
+        "amount": "10 ml"
+      },
+      {
+        "name": "алкогольная основа",
+        "amount": "60 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 16 порций",
+      "items": [
+        {
+          "name": "алкогольная основа",
+          "amount": "960 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "60 ml премикс",
+      "top sparkling + soda"
+    ]
+  },
+  {
+    "name": "Singapore Sling",
+    "icon": "🌺",
+    "glass": "Tiki",
+    "method": "shake",
+    "garnish": "мята",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "50 ml"
+      },
+      {
+        "name": "Cherry Liqueur",
+        "amount": "15 ml"
+      },
+      {
+        "name": "Triple Sec",
+        "amount": "10 ml"
+      },
+      {
+        "name": "ananas juice",
+        "amount": "60 ml"
+      },
+      {
+        "name": "lime juice",
+        "amount": "15 ml"
+      },
+      {
+        "name": "сироп гренадин",
+        "amount": "15 ml"
+      },
+      {
+        "name": "amaretto",
+        "amount": "10 ml"
+      },
+      {
+        "name": "simple syrup",
+        "amount": "10 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 12 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "600 ml"
+        },
+        {
+          "name": "Cherry Liqueur",
+          "amount": "180 ml"
+        },
+        {
+          "name": "Triple Sec",
+          "amount": "120 ml"
+        },
+        {
+          "name": "amaretto",
+          "amount": "120 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "120 ml"
+        },
+        {
+          "name": "сироп гренадин",
+          "amount": "180 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "85 ml премикс + 15 ml lime + 60 ml ananas",
+      "shake"
+    ]
+  },
+  {
+    "name": "Aperol Spritz",
+    "icon": "🍷",
+    "glass": "wine glass",
+    "method": "bild",
+    "garnish": "апельсин",
+    "ingredients": [
+      {
+        "name": "aperol house",
+        "amount": "60 ml"
+      },
+      {
+        "name": "Sparkling wine",
+        "amount": "90 ml"
+      },
+      {
+        "name": "soda water",
+        "amount": "10 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 16 порций",
+      "items": [
+        {
+          "name": "aperol house",
+          "amount": "960 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "60 ml премикс",
+      "top sparkling + soda"
+    ]
+  },
+  {
+    "name": "The San Juan Star",
+    "icon": "🌺",
+    "glass": "Tiki",
+    "method": "shake",
+    "garnish": "мята",
+    "ingredients": [
+      {
+        "name": "tequila house",
+        "amount": "30 ml"
+      },
+      {
+        "name": "Angostura",
+        "amount": "1 ml"
+      },
+      {
+        "name": "lime juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "сироп агава",
+        "amount": "10 ml"
+      },
+      {
+        "name": "orange juice",
+        "amount": "50 ml"
+      },
+      {
+        "name": "white rum",
+        "amount": "30 ml"
+      },
+      {
+        "name": "dark rum",
+        "amount": "10 ml"
+      },
+      {
+        "name": "домашний вермут кинза",
+        "amount": "15 ml"
+      },
+      {
+        "name": "пюре фейхоа",
+        "amount": "10 ml"
+      },
+      {
+        "name": "пюре личе",
+        "amount": "10 ml"
+      },
+      {
+        "name": "apple juice",
+        "amount": "50 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "tequila house",
+          "amount": "330 ml"
+        },
+        {
+          "name": "white rum",
+          "amount": "330 ml"
+        },
+        {
+          "name": "dark rum",
+          "amount": "110 ml"
+        },
+        {
+          "name": "домашний вермут",
+          "amount": "165 ml"
+        },
+        {
+          "name": "сироп агава",
+          "amount": "110 ml"
+        },
+        {
+          "name": "пюре фейхоа",
+          "amount": "110 ml"
+        },
+        {
+          "name": "пюре личе",
+          "amount": "110 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс + соки",
+      "shake"
+    ]
+  },
+  {
+    "name": "MR Mojo",
+    "icon": "🌺",
+    "glass": "Tiki",
+    "method": "shake",
+    "garnish": "апельсин",
+    "ingredients": [
+      {
+        "name": "red bitter",
+        "amount": "20 ml"
+      },
+      {
+        "name": "ananas juice",
+        "amount": "50 ml"
+      },
+      {
+        "name": "lime juice",
+        "amount": "25 ml"
+      },
+      {
+        "name": "сироп спайси",
+        "amount": "35 ml"
+      },
+      {
+        "name": "dark rum",
+        "amount": "50 ml"
+      },
+      {
+        "name": "матча",
+        "amount": "щепотка"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 10 порций",
+      "items": [
+        {
+          "name": "red bitter",
+          "amount": "200 ml"
+        },
+        {
+          "name": "dark rum",
+          "amount": "500 ml"
+        },
+        {
+          "name": "сироп спайси",
+          "amount": "350 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "105 ml премикс + 25 ml lime + 50 ml ananas",
+      "shake"
+    ]
+  },
+  {
+    "name": "The Great Red Shark",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "пастила",
+    "ingredients": [
+      {
+        "name": "scotch house",
+        "amount": "60 ml"
+      },
+      {
+        "name": "scotch house",
+        "amount": "60 ml"
+      },
+      {
+        "name": "casis",
+        "amount": "20 ml"
+      },
+      {
+        "name": "red bitter (розмарин)",
+        "amount": "30 ml"
+      },
+      {
+        "name": "creol bitter",
+        "amount": "2 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 5 порций",
+      "items": [
+        {
+          "name": "scotch house",
+          "amount": "600 ml"
+        },
+        {
+          "name": "casis",
+          "amount": "100 ml"
+        },
+        {
+          "name": "red bitter",
+          "amount": "150 ml"
+        },
+        {
+          "name": "creol bitter",
+          "amount": "10 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "172 ml премикс",
+      "shake"
+    ]
+  },
+  {
+    "name": "Tropicano",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "рулет",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "50 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "сироп маракуйя",
+        "amount": "30 ml"
+      },
+      {
+        "name": "cream",
+        "amount": "20 ml"
+      },
+      {
+        "name": "cocount milk",
+        "amount": "10 ml"
+      },
+      {
+        "name": "bubble drops",
+        "amount": "1 pt"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 12 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "600 ml"
+        },
+        {
+          "name": "сироп маракуйя",
+          "amount": "360 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "80 ml премикс + 20 ml lemon + cream + milk",
+      "shake"
+    ]
+  },
+  {
+    "name": "Cocopine",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "shake",
+    "garnish": "маршмелоу",
+    "ingredients": [
+      {
+        "name": "rum coconut",
+        "amount": "40 ml"
+      },
+      {
+        "name": "cream",
+        "amount": "20 ml"
+      },
+      {
+        "name": "ananas juice",
+        "amount": "50 ml"
+      },
+      {
+        "name": "пюре агрохаб клубника",
+        "amount": "20 ml"
+      },
+      {
+        "name": "сироп гренадин",
+        "amount": "5 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 15 порций",
+      "items": [
+        {
+          "name": "rum coconut",
+          "amount": "600 ml"
+        },
+        {
+          "name": "пюре клубника",
+          "amount": "300 ml"
+        },
+        {
+          "name": "сироп гренадин",
+          "amount": "75 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "65 ml премикс + 50 ml ananas + 20 ml cream",
+      "shake"
+    ]
+  },
+  {
+    "name": "Elder Queen",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "garnish": "виноград",
+    "ingredients": [
+      {
+        "name": "elderflower liqueur",
+        "amount": "20 ml"
+      },
+      {
+        "name": "настойка кислое яблоко",
+        "amount": "15 ml"
+      },
+      {
+        "name": "кордиал лайм",
+        "amount": "30 ml"
+      },
+      {
+        "name": "lychee liqueur",
+        "amount": "20 ml"
+      },
+      {
+        "name": "blue curacao",
+        "amount": "3 ml"
+      },
+      {
+        "name": "white rum",
+        "amount": "30 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "elderflower liqueur",
+          "amount": "220 ml"
+        },
+        {
+          "name": "настойка яблоко",
+          "amount": "165 ml"
+        },
+        {
+          "name": "lychee liqueur",
+          "amount": "220 ml"
+        },
+        {
+          "name": "blue curacao",
+          "amount": "33 ml"
+        },
+        {
+          "name": "white rum",
+          "amount": "330 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "88 ml премикс + 30 ml кордиал",
+      "stir"
+    ]
+  },
+  {
+    "name": "Opium",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "цедра",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "20 ml"
+      },
+      {
+        "name": "vodka house",
+        "amount": "20 ml"
+      },
+      {
+        "name": "пюре юдзу",
+        "amount": "15 ml"
+      },
+      {
+        "name": "pisang",
+        "amount": "15 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "20 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "280 ml"
+        },
+        {
+          "name": "vodka house",
+          "amount": "280 ml"
+        },
+        {
+          "name": "пюре юдзу",
+          "amount": "210 ml"
+        },
+        {
+          "name": "pisang",
+          "amount": "210 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс + 20 ml lemon",
+      "shake"
+    ]
+  },
+  {
+    "name": "Ash",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "shake",
+    "garnish": "базилик",
+    "ingredients": [
+      {
+        "name": "Finlandia cranberry",
+        "amount": "40 ml"
+      },
+      {
+        "name": "спайси сироп",
+        "amount": "15 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "базилик",
+        "amount": "pt"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 18 порций",
+      "items": [
+        {
+          "name": "Finlandia cranberry",
+          "amount": "720 ml"
+        },
+        {
+          "name": "спайси сироп",
+          "amount": "270 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "55 ml премикс + 20 ml lemon + базилик",
+      "shake"
+    ]
+  },
+  {
+    "name": "Pista",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "shake",
+    "garnish": "сухоцвет",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "30 ml"
+      },
+      {
+        "name": "пюре манго",
+        "amount": "20 ml"
+      },
+      {
+        "name": "aperol house",
+        "amount": "15 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "15 ml"
+      },
+      {
+        "name": "сироп фисташка",
+        "amount": "15 ml"
+      },
+      {
+        "name": "jasmine water",
+        "amount": "3 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 12 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "360 ml"
+        },
+        {
+          "name": "пюре манго",
+          "amount": "240 ml"
+        },
+        {
+          "name": "aperol house",
+          "amount": "180 ml"
+        },
+        {
+          "name": "сироп фисташка",
+          "amount": "180 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "80 ml премикс + 15 ml lemon",
+      "shake"
+    ]
+  },
+  {
+    "name": "Flor",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "shake",
+    "garnish": "пастила",
+    "ingredients": [
+      {
+        "name": "brandy",
+        "amount": "20 ml"
+      },
+      {
+        "name": "Jerez fino",
+        "amount": "30 ml"
+      },
+      {
+        "name": "пюре банан",
+        "amount": "20 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "15 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "brandy",
+          "amount": "280 ml"
+        },
+        {
+          "name": "Jerez fino",
+          "amount": "420 ml"
+        },
+        {
+          "name": "пюре банан",
+          "amount": "280 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс + 15 ml lemon",
+      "shake"
+    ]
+  },
+  {
+    "name": "Merry Pranksters",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "shake",
+    "garnish": "мята",
+    "ingredients": [
+      {
+        "name": "настойка грейпфрут",
+        "amount": "20 ml"
+      },
+      {
+        "name": "сироп кокос",
+        "amount": "20 ml"
+      },
+      {
+        "name": "soda water",
+        "amount": "top"
+      },
+      {
+        "name": "white rum",
+        "amount": "45 ml"
+      },
+      {
+        "name": "bianco vermouth",
+        "amount": "25 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "настойка",
+          "amount": "220 ml"
+        },
+        {
+          "name": "сироп кокос",
+          "amount": "220 ml"
+        },
+        {
+          "name": "white rum",
+          "amount": "495 ml"
+        },
+        {
+          "name": "vermouth",
+          "amount": "275 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс",
+      "top soda"
+    ]
+  },
+  {
+    "name": "Electric Kool",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "garnish": "лайм",
+    "ingredients": [
+      {
+        "name": "вермут апельсин",
+        "amount": "10 ml"
+      },
+      {
+        "name": "вермут лайм",
+        "amount": "20 ml"
+      },
+      {
+        "name": "tequila",
+        "amount": "65 ml"
+      },
+      {
+        "name": "сироп агава",
+        "amount": "15 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 10 порций",
+      "items": [
+        {
+          "name": "tequila",
+          "amount": "650 ml"
+        },
+        {
+          "name": "вермуты",
+          "amount": "300 ml"
+        },
+        {
+          "name": "сироп агава",
+          "amount": "150 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "100 ml премикс",
+      "stir"
+    ]
+  },
+  {
+    "name": "Furthur",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "базилик",
+    "ingredients": [
+      {
+        "name": "вермут базилик",
+        "amount": "20 ml"
+      },
+      {
+        "name": "lime juice",
+        "amount": "10 ml"
+      },
+      {
+        "name": "BOURBON house",
+        "amount": "40 ml"
+      },
+      {
+        "name": "сироп спайси",
+        "amount": "10 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "BOURBON house",
+          "amount": "560 ml"
+        },
+        {
+          "name": "вермут",
+          "amount": "280 ml"
+        },
+        {
+          "name": "сироп",
+          "amount": "140 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс + 10 ml lime",
+      "shake"
+    ]
+  },
+  {
+    "name": "McMurphy's Mercy",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "shake",
+    "garnish": "яблоко",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "50 ml"
+      },
+      {
+        "name": "агрохаб пюре яблоко",
+        "amount": "20 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "кордиал тархун",
+        "amount": "7 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "700 ml"
+        },
+        {
+          "name": "пюре яблоко",
+          "amount": "280 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс + 20 ml lemon + 7 ml кордиал",
+      "shake"
+    ]
+  },
+  {
+    "name": "The Combine's Cure",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "маршмелоу",
+    "ingredients": [
+      {
+        "name": "palo túnel",
+        "amount": "30 ml"
+      },
+      {
+        "name": "настойка коровка",
+        "amount": "30 ml"
+      },
+      {
+        "name": "пюре черная смородина",
+        "amount": "10 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "palo túnel",
+          "amount": "420 ml"
+        },
+        {
+          "name": "настойка",
+          "amount": "420 ml"
+        },
+        {
+          "name": "пюре",
+          "amount": "140 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс",
+      "shake"
+    ]
+  },
+  {
+    "name": "White Rabbit's Garden",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "shake",
+    "garnish": "сухоцвет",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "25 ml"
+      },
+      {
+        "name": "агрохаб пюре маракуйя",
+        "amount": "30 ml"
+      },
+      {
+        "name": "lime juice",
+        "amount": "10 ml"
+      },
+      {
+        "name": "simple syrup",
+        "amount": "10 ml"
+      },
+      {
+        "name": "Sparkling wine",
+        "amount": "top"
+      },
+      {
+        "name": "домашний вермут лайм-базилик",
+        "amount": "25 ml"
+      },
+      {
+        "name": "настойка грейпфрут",
+        "amount": "10 ml"
+      },
+      {
+        "name": "цветочный биттер",
+        "amount": "2 дэш"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 10 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "250 ml"
+        },
+        {
+          "name": "пюре маракуйя",
+          "amount": "300 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "100 ml"
+        },
+        {
+          "name": "вермут",
+          "amount": "250 ml"
+        },
+        {
+          "name": "настойка",
+          "amount": "100 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "100 ml премикс + 10 ml lime",
+      "shake",
+      "top Sparkling",
+      "2 дэш"
+    ]
+  },
+  {
+    "name": "The Dharma Spirit",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "апельсин",
+    "ingredients": [
+      {
+        "name": "tequila",
+        "amount": "25 ml"
+      },
+      {
+        "name": "агрохаб пюре манго",
+        "amount": "25 ml"
+      },
+      {
+        "name": "sweet vermouth",
+        "amount": "25 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "25 ml"
+      },
+      {
+        "name": "simple syrup",
+        "amount": "10 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "tequila",
+          "amount": "275 ml"
+        },
+        {
+          "name": "пюре манго",
+          "amount": "275 ml"
+        },
+        {
+          "name": "sweet vermouth",
+          "amount": "275 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "110 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "85 ml премикс + 25 ml lemon",
+      "shake"
+    ]
+  },
+  {
+    "name": "Pieces of Gum",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "shake",
+    "garnish": "ягоды",
+    "ingredients": [
+      {
+        "name": "vodka house",
+        "amount": "40 ml"
+      },
+      {
+        "name": "сироп ваниль",
+        "amount": "10 ml"
+      },
+      {
+        "name": "Coffee Liqueur",
+        "amount": "10 ml"
+      },
+      {
+        "name": "cream",
+        "amount": "20 ml"
+      },
+      {
+        "name": "пюре клубника",
+        "amount": "30 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 12 порций",
+      "items": [
+        {
+          "name": "vodka",
+          "amount": "480 ml"
+        },
+        {
+          "name": "сироп",
+          "amount": "120 ml"
+        },
+        {
+          "name": "coffee liqueur",
+          "amount": "120 ml"
+        },
+        {
+          "name": "пюре",
+          "amount": "360 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс + 20 ml cream",
+      "shake"
+    ]
+  },
+  {
+    "name": "Elfie",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "игристое",
+    "ingredients": [
+      {
+        "name": "vodka house",
+        "amount": "30 ml"
+      },
+      {
+        "name": "пюре маракуйя",
+        "amount": "30 ml"
+      },
+      {
+        "name": "сироп ваниль",
+        "amount": "10 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "10 ml"
+      },
+      {
+        "name": "Sparkling wine",
+        "amount": "top"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "vodka",
+          "amount": "420 ml"
+        },
+        {
+          "name": "пюре",
+          "amount": "420 ml"
+        },
+        {
+          "name": "сироп",
+          "amount": "140 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс + 10 ml lemon",
+      "shake",
+      "top Sparkling"
+    ]
+  },
+  {
+    "name": "Nudes",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "маршмелоу",
+    "ingredients": [
+      {
+        "name": "vodka house",
+        "amount": "20 ml"
+      },
+      {
+        "name": "pisang",
+        "amount": "20 ml"
+      },
+      {
+        "name": "cream",
+        "amount": "20 ml"
+      },
+      {
+        "name": "сироп фисташка",
+        "amount": "20 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 16 порций",
+      "items": [
+        {
+          "name": "vodka",
+          "amount": "320 ml"
+        },
+        {
+          "name": "pisang",
+          "amount": "320 ml"
+        },
+        {
+          "name": "сироп",
+          "amount": "320 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "60 ml премикс + 20 ml cream",
+      "shake"
+    ]
+  },
+  {
+    "name": "Shadow Grove",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "stir & strain",
+    "ingredients": [
+      {
+        "name": "sweet vermouth",
+        "amount": "20 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "10 ml"
+      },
+      {
+        "name": "elderflower liqueur",
+        "amount": "30 ml"
+      },
+      {
+        "name": "dark rum",
+        "amount": "50 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 12 порций",
+      "items": [
+        {
+          "name": "vermouth",
+          "amount": "240 ml"
+        },
+        {
+          "name": "elderflower",
+          "amount": "360 ml"
+        },
+        {
+          "name": "dark rum",
+          "amount": "600 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "100 ml премикс + 10 ml lemon",
+      "stir"
+    ]
+  },
+  {
+    "name": "Hunched Dog",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "20 ml"
+      },
+      {
+        "name": "palo túnel",
+        "amount": "20 ml"
+      },
+      {
+        "name": "Maraschino",
+        "amount": "20 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "20 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 16 порций",
+      "items": [
+        {
+          "name": "gin",
+          "amount": "320 ml"
+        },
+        {
+          "name": "palo túnel",
+          "amount": "320 ml"
+        },
+        {
+          "name": "Maraschino",
+          "amount": "320 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "60 ml премикс + 20 ml lemon",
+      "shake"
+    ]
+  },
+  {
+    "name": "It's a Sin",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "20 ml"
+      },
+      {
+        "name": "dry vermouth",
+        "amount": "20 ml"
+      },
+      {
+        "name": "green apple liqueur",
+        "amount": "20 ml"
+      },
+      {
+        "name": "lime juice",
+        "amount": "10 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 16 порций",
+      "items": [
+        {
+          "name": "gin",
+          "amount": "320 ml"
+        },
+        {
+          "name": "vermouth",
+          "amount": "320 ml"
+        },
+        {
+          "name": "apple liqueur",
+          "amount": "320 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "60 ml премикс + 10 ml lime",
+      "stir"
+    ]
+  },
+  {
+    "name": "Midnight Bop",
+    "icon": "🍷",
+    "glass": "wine glass",
+    "method": "bild",
+    "ingredients": [
+      {
+        "name": "suze",
+        "amount": "15 ml"
+      },
+      {
+        "name": "настойка щавель",
+        "amount": "50 ml"
+      },
+      {
+        "name": "soda water",
+        "amount": "30 ml"
+      },
+      {
+        "name": "Sparkling wine",
+        "amount": "70 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 15 порций",
+      "items": [
+        {
+          "name": "suze",
+          "amount": "225 ml"
+        },
+        {
+          "name": "настойка",
+          "amount": "750 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "65 ml премикс",
+      "top soda + Sparkling"
+    ]
+  },
+  {
+    "name": "Her Roots",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "ingredients": [
+      {
+        "name": "elderflower liqueur",
+        "amount": "40 ml"
+      },
+      {
+        "name": "dry vermouth",
+        "amount": "30 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "10 ml"
+      },
+      {
+        "name": "Sparkling wine",
+        "amount": "top"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "elderflower",
+          "amount": "560 ml"
+        },
+        {
+          "name": "vermouth",
+          "amount": "420 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс + 10 ml lemon",
+      "top Sparkling"
+    ]
+  },
+  {
+    "name": "Long Island",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "bild",
+    "ingredients": [
+      {
+        "name": "vodka",
+        "amount": "15 ml"
+      },
+      {
+        "name": "gin",
+        "amount": "15 ml"
+      },
+      {
+        "name": "rum",
+        "amount": "15 ml"
+      },
+      {
+        "name": "tequila",
+        "amount": "15 ml"
+      },
+      {
+        "name": "Triple Sec",
+        "amount": "15 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "10 ml"
+      },
+      {
+        "name": "Coca Cola",
+        "amount": "top"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 16 порций",
+      "items": [
+        {
+          "name": "vodka",
+          "amount": "240 ml"
+        },
+        {
+          "name": "gin",
+          "amount": "240 ml"
+        },
+        {
+          "name": "rum",
+          "amount": "240 ml"
+        },
+        {
+          "name": "tequila",
+          "amount": "240 ml"
+        },
+        {
+          "name": "Triple Sec",
+          "amount": "240 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "75 ml премикс + 10 ml lemon",
+      "top cola"
+    ]
+  },
+  {
+    "name": "№17",
+    "icon": "🥤",
+    "glass": "copper mug",
+    "method": "shake",
+    "garnish": "мята",
+    "ingredients": [
+      {
+        "name": "vodka house",
+        "amount": "50 ml"
+      },
+      {
+        "name": "пюре агрохаб огурец",
+        "amount": "25 ml"
+      },
+      {
+        "name": "lime juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "настойка имбирь",
+        "amount": "15 ml"
+      },
+      {
+        "name": "tonic",
+        "amount": "top"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "vodka house",
+          "amount": "550 ml"
+        },
+        {
+          "name": "пюре агрохаб огурец",
+          "amount": "275 ml"
+        },
+        {
+          "name": "настойка имбирь",
+          "amount": "165 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс + 20 ml lime",
+      "shake",
+      "top tonic"
+    ]
+  },
+  {
+    "name": "Chenault",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "stir & strain",
+    "garnish": "засахаренный имбирь",
+    "ingredients": [
+      {
+        "name": "сироп имбирный",
+        "amount": "10 ml"
+      },
+      {
+        "name": "sweet vermouth",
+        "amount": "30 ml"
+      },
+      {
+        "name": "апельсиновый шраб",
+        "amount": "15 ml"
+      },
+      {
+        "name": "white rum",
+        "amount": "50 ml"
+      },
+      {
+        "name": "Angostura",
+        "amount": "2 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 10 порций",
+      "items": [
+        {
+          "name": "white rum",
+          "amount": "500 ml"
+        },
+        {
+          "name": "sweet vermouth",
+          "amount": "300 ml"
+        },
+        {
+          "name": "сироп имбирный",
+          "amount": "100 ml"
+        },
+        {
+          "name": "апельсиновый шраб",
+          "amount": "150 ml"
+        },
+        {
+          "name": "Angostura",
+          "amount": "20 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "107 ml премикс",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Thomas Sean",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "garnish": "курага",
+    "ingredients": [
+      {
+        "name": "красный вермут на кардамоне",
+        "amount": "40 ml"
+      },
+      {
+        "name": "simple syrup",
+        "amount": "5 ml"
+      },
+      {
+        "name": "скотч на кураге",
+        "amount": "60 ml"
+      },
+      {
+        "name": "Angostura",
+        "amount": "1 ml"
+      },
+      {
+        "name": "orange bitter",
+        "amount": "2 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 9 порций",
+      "items": [
+        {
+          "name": "скотч на кураге",
+          "amount": "540 ml"
+        },
+        {
+          "name": "вермут",
+          "amount": "360 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "45 ml"
+        },
+        {
+          "name": "Angostura",
+          "amount": "9 ml"
+        },
+        {
+          "name": "orange bitter",
+          "amount": "18 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "108 ml премикс",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Rizz",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "bild",
+    "garnish": "сухоцвет",
+    "ingredients": [
+      {
+        "name": "сироп ваниль",
+        "amount": "5 ml"
+      },
+      {
+        "name": "soda water",
+        "amount": "100 ml"
+      },
+      {
+        "name": "кокосовая водка",
+        "amount": "40 ml"
+      },
+      {
+        "name": "вермут жасмин",
+        "amount": "20 ml"
+      },
+      {
+        "name": "кордиал лимон",
+        "amount": "20 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 15 порций",
+      "items": [
+        {
+          "name": "кокосовая водка",
+          "amount": "600 ml"
+        },
+        {
+          "name": "вермут жасмин",
+          "amount": "300 ml"
+        },
+        {
+          "name": "сироп ваниль",
+          "amount": "75 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "65 ml премикс + 20 ml кордиал",
+      "top soda"
+    ]
+  },
+  {
+    "name": "Caballero",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "garnish": "вишня",
+    "ingredients": [
+      {
+        "name": "Cherry Liqueur",
+        "amount": "20 ml"
+      },
+      {
+        "name": "dry vermouth",
+        "amount": "20 ml"
+      },
+      {
+        "name": "fernet branko",
+        "amount": "5 ml"
+      },
+      {
+        "name": "портвейн с черным перцем",
+        "amount": "40 ml"
+      },
+      {
+        "name": "Angostura",
+        "amount": "2 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "портвейн",
+          "amount": "440 ml"
+        },
+        {
+          "name": "Cherry Liqueur",
+          "amount": "220 ml"
+        },
+        {
+          "name": "vermouth",
+          "amount": "220 ml"
+        },
+        {
+          "name": "fernet",
+          "amount": "55 ml"
+        },
+        {
+          "name": "Angostura",
+          "amount": "22 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "87 ml премикс",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Granny",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "конфитюр",
+    "ingredients": [
+      {
+        "name": "Адвокаат",
+        "amount": "40 ml"
+      },
+      {
+        "name": "настойка грейпфрут",
+        "amount": "40 ml"
+      },
+      {
+        "name": "сироп корицы",
+        "amount": "10 ml"
+      },
+      {
+        "name": "апельсиновый конфитюр",
+        "amount": "2 ч/л"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "Адвокаат",
+          "amount": "440 ml"
+        },
+        {
+          "name": "настойка",
+          "amount": "440 ml"
+        },
+        {
+          "name": "сироп",
+          "amount": "110 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс + конфитюр",
+      "shake"
+    ]
+  },
+  {
+    "name": "Semplice High",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "shake",
+    "garnish": "зефир",
+    "ingredients": [
+      {
+        "name": "vodka house",
+        "amount": "50 ml"
+      },
+      {
+        "name": "cream",
+        "amount": "30 ml"
+      },
+      {
+        "name": "Coffee Liqueur",
+        "amount": "30 ml"
+      },
+      {
+        "name": "сироп гренадин",
+        "amount": "15 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 10 порций",
+      "items": [
+        {
+          "name": "vodka house",
+          "amount": "500 ml"
+        },
+        {
+          "name": "Coffee Liqueur",
+          "amount": "300 ml"
+        },
+        {
+          "name": "сироп гренадин",
+          "amount": "150 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "95 ml премикс + 30 ml cream",
+      "shake"
+    ]
+  },
+  {
+    "name": "ACID Antony",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "shake",
+    "garnish": "киви",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "45 ml"
+      },
+      {
+        "name": "пюре киви",
+        "amount": "25 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "30 ml"
+      },
+      {
+        "name": "персик биттер",
+        "amount": "2 ml"
+      },
+      {
+        "name": "bubble drops",
+        "amount": "1 pt"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "630 ml"
+        },
+        {
+          "name": "пюре киви",
+          "amount": "350 ml"
+        },
+        {
+          "name": "персик биттер",
+          "amount": "28 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "72 ml премикс + 30 ml lemon + bubble",
+      "shake"
+    ]
+  },
+  {
+    "name": "Bumblebee",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "30 ml"
+      },
+      {
+        "name": "elderflower liqueur",
+        "amount": "15 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "сироп медовый",
+        "amount": "10 ml"
+      },
+      {
+        "name": "абсент",
+        "amount": "5 ml"
+      },
+      {
+        "name": "bubble drops",
+        "amount": "1 pt"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 16 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "480 ml"
+        },
+        {
+          "name": "elderflower",
+          "amount": "240 ml"
+        },
+        {
+          "name": "сироп медовый",
+          "amount": "160 ml"
+        },
+        {
+          "name": "абсент",
+          "amount": "80 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "60 ml премикс + 20 ml lemon + bubble",
+      "shake"
+    ]
+  },
+  {
+    "name": "Grinch",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "bild",
+    "garnish": "имбирь",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "40 ml"
+      },
+      {
+        "name": "tonic",
+        "amount": "60 ml"
+      },
+      {
+        "name": "кордиал имбирь-корица",
+        "amount": "30 ml"
+      },
+      {
+        "name": "лимонад крем-сода",
+        "amount": "60 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 25 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "1000 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "40 ml премикс + 30 ml кордиал",
+      "top tonic + лимонад"
+    ]
+  },
+  {
+    "name": "Diabet",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "лайм мусс",
+    "ingredients": [
+      {
+        "name": "gin house",
+        "amount": "40 ml"
+      },
+      {
+        "name": "pedro himenez",
+        "amount": "10 ml"
+      },
+      {
+        "name": "пюре фейхоа",
+        "amount": "20 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "чай на ванили",
+        "amount": "10 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "gin house",
+          "amount": "560 ml"
+        },
+        {
+          "name": "pedro himenez",
+          "amount": "140 ml"
+        },
+        {
+          "name": "пюре фейхоа",
+          "amount": "280 ml"
+        },
+        {
+          "name": "чай",
+          "amount": "140 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс + 20 ml lemon",
+      "shake"
+    ]
+  },
+  {
+    "name": "Durango",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "garnish": "огурец",
+    "ingredients": [
+      {
+        "name": "tequila",
+        "amount": "40 ml"
+      },
+      {
+        "name": "Lillet на грейпфруте",
+        "amount": "30 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "15 ml"
+      },
+      {
+        "name": "кордиал корица-имбирь",
+        "amount": "25 ml"
+      },
+      {
+        "name": "сироп агава",
+        "amount": "5 ml"
+      },
+      {
+        "name": "сироп огурец",
+        "amount": "10 ml"
+      },
+      {
+        "name": "огурец биттер",
+        "amount": "2"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "tequila",
+          "amount": "440 ml"
+        },
+        {
+          "name": "Lillet",
+          "amount": "330 ml"
+        },
+        {
+          "name": "сироп агава",
+          "amount": "55 ml"
+        },
+        {
+          "name": "сироп огурец",
+          "amount": "110 ml"
+        },
+        {
+          "name": "биттер",
+          "amount": "22 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "87 ml премикс + 15 ml lemon + 25 ml кордиал",
+      "shake"
+    ]
+  },
+  {
+    "name": "Santa Anna",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "stir & strain",
+    "ingredients": [
+      {
+        "name": "tequila",
+        "amount": "50 ml"
+      },
+      {
+        "name": "simple syrup",
+        "amount": "5 ml"
+      },
+      {
+        "name": "lime juice",
+        "amount": "10 ml"
+      },
+      {
+        "name": "кордиал розмарин-мед",
+        "amount": "20 ml"
+      },
+      {
+        "name": "сок грейпфрут",
+        "amount": "25 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 18 порций",
+      "items": [
+        {
+          "name": "tequila",
+          "amount": "900 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "90 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "55 ml премикс + 10 ml lime + 20 ml кордиал + 25 ml сок",
+      "stir"
+    ]
+  },
+  {
+    "name": "Face of Ramon",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "ingredients": [
+      {
+        "name": "tequila house",
+        "amount": "50 ml"
+      },
+      {
+        "name": "simple syrup",
+        "amount": "30 ml"
+      },
+      {
+        "name": "orange juice",
+        "amount": "25 ml"
+      },
+      {
+        "name": "cream",
+        "amount": "20 ml"
+      },
+      {
+        "name": "настойка имбирь",
+        "amount": "10 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "tequila",
+          "amount": "550 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "330 ml"
+        },
+        {
+          "name": "настойка имбирь",
+          "amount": "110 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс + 25 ml orange + 20 ml cream",
+      "shake"
+    ]
+  },
+  {
+    "name": "Terry",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "ingredients": [
+      {
+        "name": "tequila",
+        "amount": "40 ml"
+      },
+      {
+        "name": "настойка кофе-сгущенка",
+        "amount": "20 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "10 ml"
+      },
+      {
+        "name": "сироп маракуйя",
+        "amount": "15 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 13 порций",
+      "items": [
+        {
+          "name": "tequila",
+          "amount": "520 ml"
+        },
+        {
+          "name": "настойка",
+          "amount": "260 ml"
+        },
+        {
+          "name": "сироп маракуйя",
+          "amount": "195 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "75 ml премикс + 10 ml lemon",
+      "shake"
+    ]
+  },
+  {
+    "name": "Mexicali Blues",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "stir & strain",
+    "ingredients": [
+      {
+        "name": "lemon juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "тобаско",
+        "amount": "2 ml"
+      },
+      {
+        "name": "sweet vermouth",
+        "amount": "20 ml"
+      },
+      {
+        "name": "dark rum",
+        "amount": "50 ml"
+      },
+      {
+        "name": "кордиал мед-розмарин",
+        "amount": "20 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "dark rum",
+          "amount": "700 ml"
+        },
+        {
+          "name": "sweet vermouth",
+          "amount": "280 ml"
+        },
+        {
+          "name": "тобаско",
+          "amount": "28 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс + 20 ml lemon + 20 ml кордиал",
+      "stir"
+    ]
+  },
+  {
+    "name": "Casbash",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "bild",
+    "ingredients": [
+      {
+        "name": "vodka",
+        "amount": "40 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "20 ml"
+      },
+      {
+        "name": "matcha syrop",
+        "amount": "25 ml"
+      },
+      {
+        "name": "cucumber water",
+        "amount": "top"
+      },
+      {
+        "name": "cucumber bitter",
+        "amount": "2"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 15 порций",
+      "items": [
+        {
+          "name": "vodka",
+          "amount": "600 ml"
+        },
+        {
+          "name": "matcha syrop",
+          "amount": "375 ml"
+        },
+        {
+          "name": "cucumber bitter",
+          "amount": "30 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "65 ml премикс + 20 ml lemon",
+      "top cucumber water"
+    ]
+  },
+  {
+    "name": "Sheena",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "shake",
+    "ingredients": [
+      {
+        "name": "vanilla vodka",
+        "amount": "30 ml"
+      },
+      {
+        "name": "red tea",
+        "amount": "40 ml"
+      },
+      {
+        "name": "cream",
+        "amount": "10 ml"
+      },
+      {
+        "name": "simple syrup",
+        "amount": "20 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 14 порций",
+      "items": [
+        {
+          "name": "vanilla vodka",
+          "amount": "420 ml"
+        },
+        {
+          "name": "red tea",
+          "amount": "560 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "280 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 ml премикс + 10 ml cream",
+      "shake"
+    ]
+  },
+  {
+    "name": "Frehley",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "ingredients": [
+      {
+        "name": "porto black pepper",
+        "amount": "50 ml"
+      },
+      {
+        "name": "red vermouth",
+        "amount": "20 ml"
+      },
+      {
+        "name": "red bitter",
+        "amount": "20 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "porto",
+          "amount": "550 ml"
+        },
+        {
+          "name": "vermouth",
+          "amount": "220 ml"
+        },
+        {
+          "name": "red bitter",
+          "amount": "220 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс",
+      "stir"
+    ]
+  },
+  {
+    "name": "Leila",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "ingredients": [
+      {
+        "name": "gin",
+        "amount": "30 ml"
+      },
+      {
+        "name": "jasmine cordial",
+        "amount": "30 ml"
+      },
+      {
+        "name": "simple syrup",
+        "amount": "10 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "10 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 25 порций",
+      "items": [
+        {
+          "name": "gin",
+          "amount": "750 ml"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "250 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "40 ml премикс + 30 ml кордиал + 10 ml lemon",
+      "stir"
+    ]
+  },
+  {
+    "name": "Rubicon Jam",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "ingredients": [
+      {
+        "name": "vodka",
+        "amount": "30 ml"
+      },
+      {
+        "name": "smoked tequila",
+        "amount": "10 ml"
+      },
+      {
+        "name": "sea buckthorn puree",
+        "amount": "20 ml"
+      },
+      {
+        "name": "herbarictica syberia",
+        "amount": "5 ml"
+      },
+      {
+        "name": "honey syrop",
+        "amount": "15 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "10 ml"
+      },
+      {
+        "name": "fireball",
+        "amount": "5 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "vodka",
+          "amount": "330 ml"
+        },
+        {
+          "name": "smoked tequila",
+          "amount": "110 ml"
+        },
+        {
+          "name": "puree",
+          "amount": "220 ml"
+        },
+        {
+          "name": "herbarictica",
+          "amount": "55 ml"
+        },
+        {
+          "name": "honey syrop",
+          "amount": "165 ml"
+        },
+        {
+          "name": "fireball",
+          "amount": "55 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс + 10 ml lemon",
+      "shake"
+    ]
+  },
+  {
+    "name": "The Orange Fashion",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "bild",
+    "ingredients": [
+      {
+        "name": "scotch",
+        "amount": "30 ml"
+      },
+      {
+        "name": "cordial orange/sinamon",
+        "amount": "50 ml"
+      },
+      {
+        "name": "angostura",
+        "amount": "2 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 12 порций",
+      "items": [
+        {
+          "name": "scotch",
+          "amount": "360 ml"
+        },
+        {
+          "name": "angostura",
+          "amount": "24 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "32 ml премикс + 50 ml кордиал"
+    ]
+  },
+  {
+    "name": "Yagel",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "stir & strain",
+    "ingredients": [
+      {
+        "name": "gin",
+        "amount": "40 ml"
+      },
+      {
+        "name": "forest cordial",
+        "amount": "40 ml"
+      },
+      {
+        "name": "dry vermouth",
+        "amount": "10 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "10 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 20 порций",
+      "items": [
+        {
+          "name": "gin",
+          "amount": "800 ml"
+        },
+        {
+          "name": "dry vermouth",
+          "amount": "200 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "50 ml премикс + 40 ml кордиал + 10 ml lemon",
+      "stir"
+    ]
+  },
+  {
+    "name": "Live with Louie",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "ingredients": [
+      {
+        "name": "interesting vodka",
+        "amount": "30 ml"
+      },
+      {
+        "name": "настойка красная смородина",
+        "amount": "50 ml"
+      },
+      {
+        "name": "grapefruite",
+        "amount": "20 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "10 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 12 порций",
+      "items": [
+        {
+          "name": "vodka",
+          "amount": "360 ml"
+        },
+        {
+          "name": "настойка",
+          "amount": "600 ml"
+        },
+        {
+          "name": "grapefruite",
+          "amount": "240 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "80 ml премикс + 10 ml lemon",
+      "stir"
+    ]
+  },
+  {
+    "name": "Ultimatum",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "ingredients": [
+      {
+        "name": "vodka blackcurrant",
+        "amount": "20 ml"
+      },
+      {
+        "name": "violet liquor",
+        "amount": "10 ml"
+      },
+      {
+        "name": "bianco vermouth eucalyptus",
+        "amount": "20 ml"
+      },
+      {
+        "name": "lemon cordial",
+        "amount": "50 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 20 порций",
+      "items": [
+        {
+          "name": "vodka",
+          "amount": "400 ml"
+        },
+        {
+          "name": "violet",
+          "amount": "200 ml"
+        },
+        {
+          "name": "vermouth",
+          "amount": "400 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "50 ml премикс + 50 ml кордиал",
+      "stir"
+    ]
+  },
+  {
+    "name": "Passion High",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "bild",
+    "ingredients": [
+      {
+        "name": "interesting vodka",
+        "amount": "40 ml"
+      },
+      {
+        "name": "cordial Passion Fruit/vanilla/lemon",
+        "amount": "60 ml"
+      },
+      {
+        "name": "liche liquor",
+        "amount": "10 ml"
+      },
+      {
+        "name": "hebarictica syberia",
+        "amount": "7 ml"
+      },
+      {
+        "name": "soda",
+        "amount": "top"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 17 порций",
+      "items": [
+        {
+          "name": "vodka",
+          "amount": "680 ml"
+        },
+        {
+          "name": "liche liquor",
+          "amount": "170 ml"
+        },
+        {
+          "name": "hebarictica",
+          "amount": "119 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "57 ml премикс + 60 ml кордиал",
+      "top soda"
+    ]
+  },
+  {
+    "name": "Purple Muse",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "stir & strain",
+    "ingredients": [
+      {
+        "name": "vodka",
+        "amount": "20 ml"
+      },
+      {
+        "name": "cassis",
+        "amount": "20 ml"
+      },
+      {
+        "name": "dry vermouth",
+        "amount": "20 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "5 ml"
+      },
+      {
+        "name": "elderberry syrup",
+        "amount": "5 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 16 порций",
+      "items": [
+        {
+          "name": "vodka",
+          "amount": "320 ml"
+        },
+        {
+          "name": "cassis",
+          "amount": "320 ml"
+        },
+        {
+          "name": "vermouth",
+          "amount": "320 ml"
+        },
+        {
+          "name": "elderberry",
+          "amount": "80 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "65 ml премикс + 5 ml lemon",
+      "stir"
+    ]
+  },
+  {
+    "name": "Live is Good",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "shake",
+    "ingredients": [
+      {
+        "name": "vodka",
+        "amount": "30 ml"
+      },
+      {
+        "name": "triple sec",
+        "amount": "15 ml"
+      },
+      {
+        "name": "apple liquor",
+        "amount": "10 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "15 ml"
+      },
+      {
+        "name": "vanilla syrop",
+        "amount": "10 ml"
+      },
+      {
+        "name": "apple juice",
+        "amount": "top"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 18 порций",
+      "items": [
+        {
+          "name": "vodka",
+          "amount": "540 ml"
+        },
+        {
+          "name": "triple sec",
+          "amount": "270 ml"
+        },
+        {
+          "name": "apple liquor",
+          "amount": "180 ml"
+        },
+        {
+          "name": "vanilla syrop",
+          "amount": "180 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "65 ml премикс + 15 ml lemon",
+      "top apple juice"
+    ]
+  },
+  {
+    "name": "Velvet Pear",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "ingredients": [
+      {
+        "name": "dark rum",
+        "amount": "40 ml"
+      },
+      {
+        "name": "pear syrop",
+        "amount": "15 ml"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "20 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 18 порций",
+      "items": [
+        {
+          "name": "dark rum",
+          "amount": "720 ml"
+        },
+        {
+          "name": "pear syrop",
+          "amount": "270 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "55 ml премикс + 20 ml lemon",
+      "shake"
+    ]
+  },
+  {
+    "name": "Northen Fire",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "stir & strain",
+    "ingredients": [
+      {
+        "name": "smoked bourbon",
+        "amount": "25 ml"
+      },
+      {
+        "name": "scotch",
+        "amount": "25 ml"
+      },
+      {
+        "name": "maple syrop",
+        "amount": "15 ml"
+      },
+      {
+        "name": "bitter orange",
+        "amount": "2 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 15 порций",
+      "items": [
+        {
+          "name": "bourbon",
+          "amount": "375 ml"
+        },
+        {
+          "name": "scotch",
+          "amount": "375 ml"
+        },
+        {
+          "name": "maple",
+          "amount": "225 ml"
+        },
+        {
+          "name": "bitter",
+          "amount": "30 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "67 ml премикс",
+      "stir"
+    ]
+  },
+  {
+    "name": "Simon",
+    "icon": "🥃",
+    "glass": "old fashion",
+    "method": "bild",
+    "ingredients": [
+      {
+        "name": "rosemary bitters",
+        "amount": "30 ml"
+      },
+      {
+        "name": "smoked bourbon",
+        "amount": "30 ml"
+      },
+      {
+        "name": "вермут красный",
+        "amount": "30 ml"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "bitters",
+          "amount": "330 ml"
+        },
+        {
+          "name": "bourbon",
+          "amount": "330 ml"
+        },
+        {
+          "name": "vermouth",
+          "amount": "330 ml"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "90 ml премикс"
+    ]
+  },
+  {
+    "name": "Noor",
+    "icon": "☕",
+    "glass": "hot",
+    "method": "build",
+    "ingredients": [
+      {
+        "name": "black tea",
+        "amount": "150 ml"
+      },
+      {
+        "name": "sweet milk",
+        "amount": "1 ст. л."
+      },
+      {
+        "name": "кардамон",
+        "amount": "3 шт"
+      },
+      {
+        "name": "dark rum",
+        "amount": "40 ml"
+      },
+      {
+        "name": "amaretto",
+        "amount": "5 ml"
+      }
+    ],
+    "premix": null,
+    "steps": [
+      "собрать в горячем виде"
+    ]
+  },
+  {
+    "name": "Correto",
+    "icon": "☕",
+    "glass": "hot",
+    "method": "build",
+    "ingredients": [
+      {
+        "name": "dark rum",
+        "amount": "20 ml"
+      },
+      {
+        "name": "amaretto",
+        "amount": "10 ml"
+      },
+      {
+        "name": "cream",
+        "amount": "20 ml"
+      },
+      {
+        "name": "cacao",
+        "amount": "140 ml"
+      }
+    ],
+    "premix": null,
+    "steps": [
+      "собрать горячим"
+    ]
+  },
+  {
+    "name": "Apple Glen",
+    "icon": "☕",
+    "glass": "hot",
+    "method": "build",
+    "ingredients": [
+      {
+        "name": "scotch",
+        "amount": "50 ml"
+      },
+      {
+        "name": "apple juice",
+        "amount": "150 ml"
+      }
+    ],
+    "premix": null,
+    "steps": [
+      "собрать горячим"
+    ]
+  },
+  {
+    "name": "Avalon",
+    "icon": "☕",
+    "glass": "hot",
+    "method": "build",
+    "ingredients": [
+      {
+        "name": "white wine",
+        "amount": "100 ml"
+      },
+      {
+        "name": "xerez",
+        "amount": "20 ml"
+      },
+      {
+        "name": "maple syrop",
+        "amount": "15 ml"
+      },
+      {
+        "name": "black tea",
+        "amount": "30 ml"
+      }
+    ],
+    "premix": null,
+    "steps": [
+      "собрать горячим"
+    ]
+  },
+  {
+    "name": "Effy",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "карбон",
+    "ingredients": [
+      {
+        "name": "interesting vodka",
+        "amount": "20 мл"
+      },
+      {
+        "name": "gin house",
+        "amount": "10 мл"
+      },
+      {
+        "name": "ликер бузина",
+        "amount": "20 мл"
+      },
+      {
+        "name": "кордиал лайм",
+        "amount": "20 мл"
+      },
+      {
+        "name": "cherry syrup",
+        "amount": "10 мл"
+      },
+      {
+        "name": "сироп тайга",
+        "amount": "7 мл"
+      },
+      {
+        "name": "вода",
+        "amount": "50 мл"
+      },
+      {
+        "name": "RLK",
+        "amount": "15 мл"
+      }
+    ],
+    "premix": {
+      "note": "5 порций",
+      "items": [
+        {
+          "name": "interesting vodka",
+          "amount": "100 мл"
+        },
+        {
+          "name": "gin house",
+          "amount": "50 мл"
+        },
+        {
+          "name": "ликер бузина",
+          "amount": "100 мл"
+        },
+        {
+          "name": "кордиал лайм",
+          "amount": "100 мл"
+        },
+        {
+          "name": "cherry syrup",
+          "amount": "50 мл"
+        },
+        {
+          "name": "сироп тайга",
+          "amount": "35 мл"
+        },
+        {
+          "name": "вода",
+          "amount": "250 мл"
+        },
+        {
+          "name": "RLK",
+          "amount": "75 мл"
+        }
+      ],
+      "yield": "760 мл"
+    },
+    "steps": [
+      "152 мл премикс",
+      "карбон"
+    ]
+  },
+  {
+    "name": "Nathan Young",
+    "icon": "🍸",
+    "glass": "Chalet Glass",
+    "method": "Stir & Strain",
+    "ingredients": [
+      {
+        "name": "vanilla vodka",
+        "amount": "20 мл"
+      },
+      {
+        "name": "gin house",
+        "amount": "10 мл"
+      },
+      {
+        "name": "acid apple",
+        "amount": "20 мл"
+      },
+      {
+        "name": "кордиал базилик",
+        "amount": "40 мл"
+      },
+      {
+        "name": "солевой раствор",
+        "amount": "2 капли"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 20 порций",
+      "items": [
+        {
+          "name": "vanilla vodka",
+          "amount": "400 мл"
+        },
+        {
+          "name": "gin house",
+          "amount": "200 мл"
+        },
+        {
+          "name": "acid apple",
+          "amount": "400 мл"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "50 мл премикс + 40 мл кордиал базилик + 2 капли солевого раствора",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "N/A Smash",
+    "icon": "🥃",
+    "glass": "Old Fashion",
+    "method": "Stir & Strain",
+    "ingredients": [
+      {
+        "name": "кордиал алоэ",
+        "amount": "40 мл"
+      },
+      {
+        "name": "кордиал базилик",
+        "amount": "30 мл"
+      },
+      {
+        "name": "вода",
+        "amount": "10 мл"
+      },
+      {
+        "name": "солевой раствор",
+        "amount": "2 капли"
+      }
+    ],
+    "premix": null,
+    "steps": [
+      "40 мл кордиал алоэ + 30 мл кордиал базилик + 10 мл воды + 2 капли солевого раствора",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Prime Era",
+    "icon": "🥃",
+    "glass": "Old Fashion",
+    "method": "shake",
+    "ingredients": [
+      {
+        "name": "dark rum",
+        "amount": "50 мл"
+      },
+      {
+        "name": "каркаде сироп",
+        "amount": "15 мл"
+      },
+      {
+        "name": "lime juice",
+        "amount": "30 мл"
+      },
+      {
+        "name": "мята",
+        "amount": ""
+      },
+      {
+        "name": "angostura",
+        "amount": ""
+      },
+      {
+        "name": "orange bitter",
+        "amount": ""
+      }
+    ],
+    "premix": {
+      "note": "1 л / 15 порций",
+      "items": [
+        {
+          "name": "dark rum",
+          "amount": "750 мл"
+        },
+        {
+          "name": "каркаде сироп",
+          "amount": "225 мл"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "65 мл премикс + 30 мл lime juice + 6-8 листьев мяты + angostura + orange bitter",
+      "shake"
+    ]
+  },
+  {
+    "name": "Red Signal",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "bild",
+    "ingredients": [
+      {
+        "name": "gin",
+        "amount": "30 мл"
+      },
+      {
+        "name": "каркаде сироп",
+        "amount": "20 мл"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "15 мл"
+      },
+      {
+        "name": "tonic",
+        "amount": "top"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 20 порций",
+      "items": [
+        {
+          "name": "gin",
+          "amount": "600 мл"
+        },
+        {
+          "name": "каркаде сироп",
+          "amount": "400 мл"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "50 мл премикс + 15 мл lemon juice",
+      "top tonic"
+    ]
+  },
+  {
+    "name": "Soft Crime",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "Stir & Strain",
+    "ingredients": [
+      {
+        "name": "vodka",
+        "amount": "25 мл"
+      },
+      {
+        "name": "jerez fino",
+        "amount": "40 мл"
+      },
+      {
+        "name": "груша сироп",
+        "amount": "20 мл"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "20 мл"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "vodka",
+          "amount": "275 мл"
+        },
+        {
+          "name": "jerez fino",
+          "amount": "440 мл"
+        },
+        {
+          "name": "груша сироп",
+          "amount": "220 мл"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "85 мл премикс + 20 мл lemon juice",
+      "stir & strain"
+    ]
+  },
+  {
+    "name": "Naked Truth",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "карбон",
+    "ingredients": [
+      {
+        "name": "vanilla vodka",
+        "amount": "20 мл"
+      },
+      {
+        "name": "lychee liqueur",
+        "amount": "20 мл"
+      },
+      {
+        "name": "lime cordial",
+        "amount": "20 мл"
+      },
+      {
+        "name": "сироп малина",
+        "amount": "15 мл"
+      },
+      {
+        "name": "вода",
+        "amount": "50 мл"
+      },
+      {
+        "name": "RLK",
+        "amount": "10 мл"
+      }
+    ],
+    "premix": {
+      "note": "5 порций",
+      "items": [
+        {
+          "name": "vanilla vodka",
+          "amount": "100 мл"
+        },
+        {
+          "name": "lychee liqueur",
+          "amount": "100 мл"
+        },
+        {
+          "name": "lime cordial",
+          "amount": "100 мл"
+        },
+        {
+          "name": "сироп малина",
+          "amount": "75 мл"
+        },
+        {
+          "name": "вода",
+          "amount": "250 мл"
+        },
+        {
+          "name": "RLK",
+          "amount": "50 мл"
+        }
+      ],
+      "yield": "675 мл"
+    },
+    "steps": [
+      "135 мл премикс",
+      "карбон"
+    ]
+  },
+  {
+    "name": "S&S Samurai",
+    "icon": "🥃",
+    "glass": "Old Fashion",
+    "method": "shake",
+    "ingredients": [
+      {
+        "name": "white rum",
+        "amount": "20 мл"
+      },
+      {
+        "name": "interesting vodka",
+        "amount": "20 мл"
+      },
+      {
+        "name": "yuzu puree",
+        "amount": "30 мл"
+      },
+      {
+        "name": "campari",
+        "amount": "10 мл"
+      },
+      {
+        "name": "lychee liqueur",
+        "amount": "20 мл"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 10 порций",
+      "items": [
+        {
+          "name": "white rum",
+          "amount": "200 мл"
+        },
+        {
+          "name": "interesting vodka",
+          "amount": "200 мл"
+        },
+        {
+          "name": "yuzu puree",
+          "amount": "300 мл"
+        },
+        {
+          "name": "campari",
+          "amount": "100 мл"
+        },
+        {
+          "name": "lychee liqueur",
+          "amount": "200 мл"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "100 мл премикс",
+      "shake"
+    ]
+  },
+  {
+    "name": "Matt",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "shake",
+    "ingredients": [
+      {
+        "name": "interesting vodka",
+        "amount": "40 мл"
+      },
+      {
+        "name": "cranberry puree",
+        "amount": "15 мл"
+      },
+      {
+        "name": "настойка имбирь",
+        "amount": "10 мл"
+      },
+      {
+        "name": "lime juice",
+        "amount": "40 мл"
+      },
+      {
+        "name": "базилик",
+        "amount": "5 листьев"
+      },
+      {
+        "name": "tonic",
+        "amount": "top"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 12 порций",
+      "items": [
+        {
+          "name": "interesting vodka",
+          "amount": "480 мл"
+        },
+        {
+          "name": "cranberry puree",
+          "amount": "180 мл"
+        },
+        {
+          "name": "настойка имбирь",
+          "amount": "120 мл"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "65 мл премикс + 40 мл lime juice + 5 листьев базилика",
+      "shake",
+      "top tonic"
+    ]
+  },
+  {
+    "name": "Jess",
+    "icon": "🥤",
+    "glass": "Highball",
+    "method": "shake",
+    "ingredients": [
+      {
+        "name": "gin",
+        "amount": "35 мл"
+      },
+      {
+        "name": "apple liquor",
+        "amount": "15 мл"
+      },
+      {
+        "name": "peach puree",
+        "amount": "20 мл"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "30 мл"
+      },
+      {
+        "name": "soda",
+        "amount": "top"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 12 порций",
+      "items": [
+        {
+          "name": "gin",
+          "amount": "420 мл"
+        },
+        {
+          "name": "apple liquor",
+          "amount": "180 мл"
+        },
+        {
+          "name": "peach puree",
+          "amount": "240 мл"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 мл премикс + 30 мл lemon juice",
+      "shake",
+      "top soda"
+    ]
+  },
+  {
+    "name": "Selina",
+    "icon": "🍸",
+    "glass": "chalet glass",
+    "method": "shake",
+    "ingredients": [
+      {
+        "name": "tequila house",
+        "amount": "30 мл"
+      },
+      {
+        "name": "dry vermouth",
+        "amount": "10 мл"
+      },
+      {
+        "name": "кордиал алоэ",
+        "amount": "40 мл"
+      },
+      {
+        "name": "солевой раствор",
+        "amount": "2 капли"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 25 порций",
+      "items": [
+        {
+          "name": "tequila house",
+          "amount": "750 мл"
+        },
+        {
+          "name": "dry vermouth",
+          "amount": "250 мл"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "40 мл премикс + 40 мл кордиал алоэ + 2 капли солевого раствора",
+      "shake"
+    ]
+  },
+  {
+    "name": "Ramblin' D Sour",
+    "icon": "🥃",
+    "glass": "Old Fashion",
+    "method": "shake",
+    "ingredients": [
+      {
+        "name": "smoked bourbon",
+        "amount": "40 мл"
+      },
+      {
+        "name": "пюре маракуйя агробар",
+        "amount": "40 мл"
+      },
+      {
+        "name": "simple syrup",
+        "amount": "20 мл"
+      }
+    ],
+    "premix": {
+      "note": "1 л / 10 порций",
+      "items": [
+        {
+          "name": "smoked bourbon",
+          "amount": "400 мл"
+        },
+        {
+          "name": "пюре маракуйя агробар",
+          "amount": "400 мл"
+        },
+        {
+          "name": "simple syrup",
+          "amount": "200 мл"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "100 мл премикс",
+      "shake"
+    ]
+  },
+  {
+    "name": "Red Sangria",
+    "icon": "🍺",
+    "glass": "Beer Glass",
+    "method": "bild",
+    "ingredients": [
+      {
+        "name": "заготовка сангрия",
+        "amount": "200 мл"
+      }
+    ],
+    "premix": null,
+    "steps": [
+      "200 мл заготовка сангрия",
+      "build"
+    ]
+  },
+  {
+    "name": "Bitter in Brazil",
+    "icon": "🥃",
+    "premium": true,
+    "glass": "Old Fashion",
+    "method": "Stir & Strain",
+    "ingredients": [
+      {
+        "name": "Cachaca",
+        "amount": "40 мл"
+      },
+      {
+        "name": "Triple Sec",
+        "amount": "20 мл"
+      },
+      {
+        "name": "Cynar",
+        "amount": "20 мл"
+      },
+      {
+        "name": "Simple Syrup",
+        "amount": "5 мл"
+      },
+      {
+        "name": "Fernet Branca",
+        "amount": "5 мл"
+      }
+    ],
+    "premix": null,
+    "steps": [
+      "Stir & Strain, в бокал твист лимонной цедры"
+    ]
+  },
+  {
+    "name": "Mezcal Margarita",
+    "icon": "🥃",
+    "premium": true,
+    "glass": "Old Fashion",
+    "method": "Shake",
+    "ingredients": [
+      {
+        "name": "Mezcal",
+        "amount": "40 мл"
+      },
+      {
+        "name": "Lime Fresh",
+        "amount": "20 мл"
+      },
+      {
+        "name": "Agava Syrup",
+        "amount": "15 мл"
+      }
+    ],
+    "premix": null,
+    "steps": [
+      "Shake"
+    ]
+  },
+  {
+    "name": "XX Century Cocktail",
+    "icon": "🍸",
+    "premium": true,
+    "glass": "Chalet Glass",
+    "method": "Shake",
+    "ingredients": [
+      {
+        "name": "Roku Gin",
+        "amount": "40 мл"
+      },
+      {
+        "name": "Cacao White",
+        "amount": "25 мл"
+      },
+      {
+        "name": "Lillet",
+        "amount": "25 мл"
+      },
+      {
+        "name": "Lemon Juice",
+        "amount": "7 мл"
+      }
+    ],
+    "premix": null,
+    "steps": [
+      "Shake, в бокал цедра лимона"
+    ]
+  },
+  {
+    "name": "Sazerac",
+    "icon": "🥃",
+    "premium": true,
+    "glass": "Old Fashion",
+    "method": "Build",
+    "ingredients": [
+      {
+        "name": "Bullet Rye",
+        "amount": "50 мл"
+      },
+      {
+        "name": "Absinthe",
+        "amount": "2 пшика"
+      },
+      {
+        "name": "Сахар",
+        "amount": "1 куб"
+      },
+      {
+        "name": "Peychaud's Bitters",
+        "amount": "2 кэша"
+      }
+    ],
+    "premix": null,
+    "steps": [
+      "Build, твист лимонной цедры в бокал"
+    ]
+  },
+  {
+    "name": "Hey Rue!",
+    "icon": "🥃",
+    "glass": "Old Fashion",
+    "method": "shake",
+    "ingredients": [
+      {
+        "name": "interesting vodka",
+        "amount": "20 мл"
+      },
+      {
+        "name": "gin house",
+        "amount": "20 мл"
+      },
+      {
+        "name": "guava syrup",
+        "amount": "20 мл"
+      },
+      {
+        "name": "aperol",
+        "amount": "10 мл"
+      },
+      {
+        "name": "lemon juice",
+        "amount": "20 мл"
+      },
+      {
+        "name": "мята",
+        "amount": ""
+      }
+    ],
+    "premix": {
+      "note": "1 л / 11 порций",
+      "items": [
+        {
+          "name": "interesting vodka",
+          "amount": "220 мл"
+        },
+        {
+          "name": "gin house",
+          "amount": "220 мл"
+        },
+        {
+          "name": "guava syrup",
+          "amount": "220 мл"
+        },
+        {
+          "name": "aperol",
+          "amount": "110 мл"
+        }
+      ],
+      "yield": ""
+    },
+    "steps": [
+      "70 мл премикс + 20 мл lemon juice + 6–8 листьев мяты",
+      "shake"
+    ]
+  }
+];
+const COCKTAILS_SORTED = [...COCKTAIL_RECIPES].sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+
+/* ---------- ЗАГОТОВКИ (техничкам для бара, открываются попапом из состава коктейля) ---------- */
+// Каждая позиция: name, ingredients: [{name, amount}], method (текст приготовления), yield (выход)
+const PREP_RECIPES = [
+  {
+    "name": "Копченая текила",
+    "ingredients": [
+      {
+        "name": "текила сиера",
+        "amount": "1000 мл"
+      }
+    ],
+    "method": "Два раза прогнать текилу через смоукер",
+    "yield": "1000 мл"
+  },
+  {
+    "name": "Домашний вермут",
+    "ingredients": [
+      {
+        "name": "сухое белое вино",
+        "amount": "750 мл"
+      },
+      {
+        "name": "водка 30%",
+        "amount": "100 мл"
+      },
+      {
+        "name": "семена кинзы",
+        "amount": "1 ч.л."
+      },
+      {
+        "name": "свежая кинза",
+        "amount": "1 веточка"
+      },
+      {
+        "name": "апельсиновая цедра",
+        "amount": "2 слайса"
+      },
+      {
+        "name": "корица",
+        "amount": "1 палочка"
+      },
+      {
+        "name": "гвоздика",
+        "amount": "2-3 бутона"
+      },
+      {
+        "name": "полынь",
+        "amount": "1 ч.л."
+      },
+      {
+        "name": "медового сиропа (сахар)",
+        "amount": "50 мл"
+      }
+    ],
+    "method": "Сувид 55 градусов, 8 часов",
+    "yield": "900 гр"
+  },
+  {
+    "name": "Апельсиновый шраб",
+    "ingredients": [
+      {
+        "name": "Апельсин мякоть (срезу цедру и альбедо)",
+        "amount": "500 гр"
+      },
+      {
+        "name": "Сахар рассыпной",
+        "amount": "200 гр"
+      },
+      {
+        "name": "Ванильный сироп",
+        "amount": "100 мл"
+      },
+      {
+        "name": "Уксус яблочный",
+        "amount": "100 мл"
+      },
+      {
+        "name": "Вода",
+        "amount": "70 мл"
+      },
+      {
+        "name": "Кориандр сушеный",
+        "amount": "0,5 гр"
+      },
+      {
+        "name": "Апельсиновая цедра без альбедо",
+        "amount": "0,2 гр"
+      }
+    ],
+    "method": "Сувид 55 градусов, 8 часов",
+    "yield": ""
+  },
+  {
+    "name": "Скотч на кураге",
+    "ingredients": [
+      {
+        "name": "Скотч хаус",
+        "amount": "1000 мл"
+      },
+      {
+        "name": "курага",
+        "amount": "16 шт"
+      }
+    ],
+    "method": "Сувид 55 градусов, 8 часов",
+    "yield": "1000 мл"
+  },
+  {
+    "name": "Красный вермут на кардамоне",
+    "ingredients": [
+      {
+        "name": "Красный Вермут",
+        "amount": "1000 мл"
+      },
+      {
+        "name": "Кардамон",
+        "amount": "16 ядер"
+      }
+    ],
+    "method": "Сувид 55 градусов, 8 часов",
+    "yield": "1000 мл"
+  },
+  {
+    "name": "Биттер на розмарине",
+    "ingredients": [
+      {
+        "name": "красный биттер",
+        "amount": "1000 мл"
+      },
+      {
+        "name": "свежий размарин",
+        "amount": "1 веточка"
+      }
+    ],
+    "method": "Сувид 55 градусов, 8 часов",
+    "yield": "1000 мл"
+  },
+  {
+    "name": "Адвокат домашний",
+    "ingredients": [
+      {
+        "name": "желтки",
+        "amount": "9 шт"
+      },
+      {
+        "name": "сгущенка",
+        "amount": "970 гр (1 банка)"
+      },
+      {
+        "name": "Водка 30%",
+        "amount": "200 мл"
+      },
+      {
+        "name": "Ром темный",
+        "amount": "200 мл"
+      },
+      {
+        "name": "Эссенция ваниль",
+        "amount": "5 капель"
+      }
+    ],
+    "method": "Подготовить основу из спиртовой водки, рома, сгущенки и ванили, все смешать до комнатной температуры. 9 желтков (без белка), постоянно помешивая, взбить на водяной бане следить чтобы не свернулся. Влить в основу и дальше продолжать помешивать в течении пары минут. Профильтровать через сито и дать остыть",
+    "yield": "900 мл"
+  },
+  {
+    "name": "Водка на кокосовом масле",
+    "ingredients": [
+      {
+        "name": "Водка 42%",
+        "amount": "1000 мл"
+      },
+      {
+        "name": "Кокосовое масло",
+        "amount": "50 гр"
+      }
+    ],
+    "method": "Масло растопить влить в водку, дать постоять 30 минут. Перелить в пакет для сувида. Су вид 6 часов 55 градусов. Достать, положить в морозильную камеру на 12 часов, профильтровать через супербэг",
+    "yield": "1000 мл"
+  },
+  {
+    "name": "Вермут на жасмине",
+    "ingredients": [
+      {
+        "name": "Вермут бьянко",
+        "amount": "1000 мл"
+      },
+      {
+        "name": "Сушеные цветы жасмина (или жасминовый зеленый чай",
+        "amount": "5 гр"
+      }
+    ],
+    "method": "сувид 55 градусов, 6 часов, фильтр супербэг",
+    "yield": "1000 мл"
+  },
+  {
+    "name": "Портвейн на черном перце",
+    "ingredients": [
+      {
+        "name": "Портвейн руби",
+        "amount": "750 мл"
+      },
+      {
+        "name": "Перец черный горошек",
+        "amount": "2 гр"
+      }
+    ],
+    "method": "Порто налить в пакет для сувида. Перец чуть разогреть на сухой сковороде засыпать в портвейн. сувид 55 градусов 6 часов. Фильтр сито",
+    "yield": "750 мл"
+  },
+  {
+    "name": "RLK",
+    "ingredients": [
+      {
+        "name": "вода",
+        "amount": "1000 мл"
+      },
+      {
+        "name": "лимонная кислота",
+        "amount": "50 гр"
+      },
+      {
+        "name": "яблочная кислота",
+        "amount": "1,5 гр"
+      },
+      {
+        "name": "соль",
+        "amount": "1,5 гр"
+      }
+    ],
+    "method": "все ингридиенты взбить в блендере",
+    "yield": "1000 мл"
+  },
+  {
+    "name": "Ликер бузины",
+    "ingredients": [
+      {
+        "name": "сироп бузина",
+        "amount": "400 мл"
+      },
+      {
+        "name": "молочная кислота",
+        "amount": "15 мл"
+      },
+      {
+        "name": "сахарный песок",
+        "amount": "80 гр"
+      },
+      {
+        "name": "водка 30%",
+        "amount": "400 мл"
+      }
+    ],
+    "method": "все ингридиенты смешать в сотейнике, держать на малом огне 20 минут, не доводя до кипения",
+    "yield": "800 мл"
+  },
+  {
+    "name": "Кордиал умами",
+    "ingredients": [
+      {
+        "name": "томаты бланшированные",
+        "amount": "1 банка"
+      },
+      {
+        "name": "кунжут белый",
+        "amount": "10 гр"
+      },
+      {
+        "name": "нори",
+        "amount": "2 листа"
+      },
+      {
+        "name": "Rlk",
+        "amount": "250 мл"
+      },
+      {
+        "name": "сахар сироп",
+        "amount": "150 мл"
+      },
+      {
+        "name": "трюфельное масло",
+        "amount": "3 капли"
+      }
+    ],
+    "method": "на максимальной температуре сначала обжарить кунжут, потом добавить томаты и сахар сироп и рлк. опустить температуру до 100-120. добавить нори и трюфельное масло 3 капли. и оставить томится на температуре 60 помешивая",
+    "yield": "350 мл"
+  },
+  {
+    "name": "Кордиал имбирь корица",
+    "ingredients": [
+      {
+        "name": "имбирь свежий",
+        "amount": "30 гр"
+      },
+      {
+        "name": "корица палочка",
+        "amount": "25 гр"
+      },
+      {
+        "name": "RLK",
+        "amount": "200 мл"
+      },
+      {
+        "name": "сахар сироп",
+        "amount": "150 мл"
+      }
+    ],
+    "method": "60 градусов, 12 часов",
+    "yield": "350 мл"
+  },
+  {
+    "name": "чай ваниль",
+    "ingredients": [
+      {
+        "name": "чай годен цейлон",
+        "amount": "50 гр"
+      },
+      {
+        "name": "ваниль сироп",
+        "amount": "500 мл"
+      }
+    ],
+    "method": "60 градусов, 12 часов",
+    "yield": "450 мл"
+  },
+  {
+    "name": "Лиле на грейпфруте",
+    "ingredients": [
+      {
+        "name": "Лиле блан",
+        "amount": "750 мл"
+      },
+      {
+        "name": "Цедра одного грейпфрута",
+        "amount": ""
+      }
+    ],
+    "method": "60 градусов, 12 часов",
+    "yield": "750 мл"
+  },
+  {
+    "name": "Засахаренный имбирь",
+    "ingredients": [
+      {
+        "name": "Имбирь",
+        "amount": "250 гр"
+      }
+    ],
+    "method": "Имбирь 250 гр почистить, нарезать кубиками или слайсами, положить в сотейник, залить водой, кипятить на слабом огне 10 минут, слить воду, залить еще раз водой, кипятить еще 10 минут, залить сахарным сиропом, варить на температуре 100-110 градусов 10 минут, слить сахарный сироп в отдельную бутылку. Достать слайсы имбиря, обмакнуть с обеих сторон в сахар, положить в дегидратор на 70 градусов, на 12-15 часов.",
+    "yield": "200 гр"
+  },
+  {
+    "name": "Дегидрированные фрукты",
+    "ingredients": [
+      {
+        "name": "фрукт",
+        "amount": "500 гр"
+      }
+    ],
+    "method": "почистить (если нужно), порезать, положить в дегидратор на 8 часов, температура 65 градусов",
+    "yield": "300 гр"
+  },
+  {
+    "name": "Желе из лимона",
+    "ingredients": [
+      {
+        "name": "лимонный сок",
+        "amount": "500 мл"
+      },
+      {
+        "name": "сахарный сироп",
+        "amount": "200 мл"
+      },
+      {
+        "name": "агар-агар",
+        "amount": "12 гр"
+      }
+    ],
+    "method": "Добавить в сотейник лимонный сок 500гр, сахарный сироп 200гр, довести до кипения, добавить в жидкость 12 гр агар-агара, вскипятить еще раз, вылить в форму, оставить остыть, убрать в морозилку на 15-20 мин.",
+    "yield": "500 гр"
+  },
+  {
+    "name": "Арома кофейная",
+    "ingredients": [
+      {
+        "name": "отработанный кофе",
+        "amount": "300 гр"
+      },
+      {
+        "name": "спирт",
+        "amount": "500 мл"
+      }
+    ],
+    "method": "в вакуумный пакет, в мультиварку на 120 градусов, пролить через кофейный фильтр",
+    "yield": "300 гр"
+  },
+  {
+    "name": "Огурец кимчи",
+    "ingredients": [
+      {
+        "name": "Огурцы слайсами",
+        "amount": "500 гр"
+      },
+      {
+        "name": "Яблочный уксус",
+        "amount": "50 мл"
+      },
+      {
+        "name": "Дробленый острый перец",
+        "amount": "10 гр"
+      },
+      {
+        "name": "Соевый соус",
+        "amount": "250 мл"
+      },
+      {
+        "name": "Сахарный сироп",
+        "amount": "50 мл"
+      },
+      {
+        "name": "Черный перец зерна",
+        "amount": "щепотка"
+      },
+      {
+        "name": "Кардамон",
+        "amount": "20 шт"
+      },
+      {
+        "name": "Орегано",
+        "amount": "щепотка"
+      },
+      {
+        "name": "Кориандр",
+        "amount": "щепотка"
+      }
+    ],
+    "method": "Собрать рассол из ингридиентов. Свернуть рулетиком слайсы огурцов, проткнуть их зуюочисткой, положить в контейнер в рассол. Убрать в холодильник на ночь.",
+    "yield": "500 гр"
+  },
+  {
+    "name": "Вермут базилик-лайм",
+    "ingredients": [
+      {
+        "name": "Базилик",
+        "amount": "100 гр со стеблями"
+      },
+      {
+        "name": "Цедра с двух лаймов",
+        "amount": ""
+      },
+      {
+        "name": "Вино белое разливное",
+        "amount": "500 мл"
+      }
+    ],
+    "method": "Сувид 55 градусов 6 часво",
+    "yield": "500 гр"
+  },
+  {
+    "name": "Кордиал горький лайм",
+    "ingredients": [
+      {
+        "name": "Цедра с 4 лаймов",
+        "amount": ""
+      },
+      {
+        "name": "Лайм фреш",
+        "amount": "150 мл"
+      },
+      {
+        "name": "Вода",
+        "amount": "150 мл"
+      },
+      {
+        "name": "Сироп сахар",
+        "amount": "250 мл"
+      },
+      {
+        "name": "Соль",
+        "amount": "1 гр"
+      },
+      {
+        "name": "Цедра половины грейпфрута",
+        "amount": ""
+      },
+      {
+        "name": "Лимонная кислота (гранулы)",
+        "amount": "10 гр"
+      },
+      {
+        "name": "Полынь",
+        "amount": "20 гр"
+      }
+    ],
+    "method": "собрать все ингриденты, кроме полыни, в блендере, взбить, профильтровать через сито, полученную жидкость перелить в вакуумный пакет, добавить полынь, сувид 55 градусов, 6 часво",
+    "yield": "550 гр"
+  },
+  {
+    "name": "Вермут базилик",
+    "ingredients": [
+      {
+        "name": "Базилик со стеблем",
+        "amount": "100 гр"
+      },
+      {
+        "name": "Вино белое",
+        "amount": "500 гр"
+      },
+      {
+        "name": "Полынь",
+        "amount": "10 гр"
+      }
+    ],
+    "method": "Сувид 55 градусов 6 часво",
+    "yield": "500 гр"
+  },
+  {
+    "name": "Вермут апельсин",
+    "ingredients": [
+      {
+        "name": "Цедра с 3 апельсинов",
+        "amount": ""
+      },
+      {
+        "name": "Вино белое",
+        "amount": "500 мл"
+      },
+      {
+        "name": "Полынь",
+        "amount": "20 гр"
+      }
+    ],
+    "method": "Сувид 55 градусов 6 часво",
+    "yield": "500 гр"
+  },
+  {
+    "name": "кордиал тархун",
+    "ingredients": [
+      {
+        "name": "сахарный песок",
+        "amount": "250 гр"
+      },
+      {
+        "name": "лимонная кислота (гранулы)",
+        "amount": "10 гр"
+      },
+      {
+        "name": "вода",
+        "amount": "250 мл"
+      }
+    ],
+    "method": "соеденить все ингриденты в блендере, слить в бутыку без фильтра",
+    "yield": "500 мл"
+  },
+  {
+    "name": "matcha syrop",
+    "ingredients": [
+      {
+        "name": "матча",
+        "amount": "50 гр"
+      },
+      {
+        "name": "сахарный сироп (1:1)",
+        "amount": "1000 мл"
+      }
+    ],
+    "method": "подогреть сахарный сироп, засыпать в него матчу, размешать до полного растворения (не варить сахар с матчей!!!!)",
+    "yield": "1000 мл"
+  },
+  {
+    "name": "огуречная вода",
+    "ingredients": [
+      {
+        "name": "вода холодная",
+        "amount": "1000мл"
+      },
+      {
+        "name": "огурец",
+        "amount": "2 шт"
+      }
+    ],
+    "method": "порезать огурец тонкими слайсами (со шкуркой), залить водой, оставить в холодильнике на ночь",
+    "yield": "1000мл"
+  },
+  {
+    "name": "vanilla vodka",
+    "ingredients": [
+      {
+        "name": "водка",
+        "amount": "500"
+      },
+      {
+        "name": "ванильная эссенция",
+        "amount": "4 пипетки"
+      },
+      {
+        "name": "ванильная арома",
+        "amount": "2 пипетки"
+      },
+      {
+        "name": "ванилин",
+        "amount": "2 гр"
+      },
+      {
+        "name": "маракуйя арома",
+        "amount": "3 капли"
+      }
+    ],
+    "method": "всем смешать в одной емкости, смешать",
+    "yield": "500 мл"
+  },
+  {
+    "name": "Portwine papper",
+    "ingredients": [
+      {
+        "name": "портвейн руби",
+        "amount": "500 мл"
+      },
+      {
+        "name": "перец горошком",
+        "amount": "15 гр"
+      }
+    ],
+    "method": "сувид 4 часа, 55 градусов",
+    "yield": "500 мл"
+  },
+  {
+    "name": "жасмин чай",
+    "ingredients": [
+      {
+        "name": "вода",
+        "amount": "500 мл"
+      },
+      {
+        "name": "чай жасмин",
+        "amount": "13 гр"
+      }
+    ],
+    "method": "горячая заварка",
+    "yield": "500 мл"
+  },
+  {
+    "name": "красный чай",
+    "ingredients": [
+      {
+        "name": "вода",
+        "amount": "500 мл"
+      },
+      {
+        "name": "чай красный",
+        "amount": "13 гр"
+      }
+    ],
+    "method": "горячая заварка",
+    "yield": "500 мл"
+  },
+  {
+    "name": "cordial orange/sinamon",
+    "ingredients": [
+      {
+        "name": "апельсиновый сок с лысых лимонов",
+        "amount": "500 мл"
+      },
+      {
+        "name": "сахар песок",
+        "amount": "400 гр"
+      },
+      {
+        "name": "вода",
+        "amount": "250 мл"
+      },
+      {
+        "name": "рлк",
+        "amount": "20 мл"
+      },
+      {
+        "name": "бадьян",
+        "amount": "1шт"
+      },
+      {
+        "name": "корица",
+        "amount": "1шт"
+      }
+    ],
+    "method": "соеденить сахар с цедрой, корицей бадьяном и водой, довести до кипения дать остыть, влить сок и рлк",
+    "yield": "1000 мл"
+  },
+  {
+    "name": "forest cordial",
+    "ingredients": [
+      {
+        "name": "варенье из шишек",
+        "amount": "400 мл"
+      },
+      {
+        "name": "вода",
+        "amount": "600 мл"
+      },
+      {
+        "name": "сахарный сироп",
+        "amount": "80 мл"
+      },
+      {
+        "name": "рлк",
+        "amount": "60 мл"
+      },
+      {
+        "name": "гвоздика",
+        "amount": "4 шт"
+      },
+      {
+        "name": "скипидрное масло",
+        "amount": "3 капли"
+      }
+    ],
+    "method": "варенье пробить через миксер, слить в сотейник, добавить остальные ингридиенты, вкипятить, профильтровать, добавить масло, остудить",
+    "yield": "1200 мл"
+  },
+  {
+    "name": "interesting vodka with pink paper",
+    "ingredients": [
+      {
+        "name": "водка 30%",
+        "amount": "1000 мл"
+      },
+      {
+        "name": "розовый перец",
+        "amount": "6 гр"
+      }
+    ],
+    "method": "пробить в блендере, отфильтровать",
+    "yield": "1000 мл"
+  },
+  {
+    "name": "bianco vermouth eucalyptus",
+    "ingredients": [
+      {
+        "name": "вермут бьянко",
+        "amount": "1000 мл"
+      },
+      {
+        "name": "эвкалипт",
+        "amount": "7 листов"
+      }
+    ],
+    "method": "сувид 55 градусов, 7 часов",
+    "yield": "1000 мл"
+  },
+  {
+    "name": "lemon cordial",
+    "ingredients": [
+      {
+        "name": "цедра лимона",
+        "amount": "60 гр"
+      },
+      {
+        "name": "цедра апельсина",
+        "amount": "10 гр"
+      },
+      {
+        "name": "сахар песок",
+        "amount": "400 гр"
+      },
+      {
+        "name": "рлк",
+        "amount": "600 мл"
+      }
+    ],
+    "method": "сувид 55 градусов, 7 часов",
+    "yield": "1000 мл"
+  },
+  {
+    "name": "cordial Passion Fruit/vanilla/lemon",
+    "ingredients": [
+      {
+        "name": "пюре маракуйя агробар",
+        "amount": "500 гр"
+      },
+      {
+        "name": "сахар сироп",
+        "amount": "400 мл"
+      },
+      {
+        "name": "рлк",
+        "amount": "100 мл"
+      },
+      {
+        "name": "эсенция ваниль",
+        "amount": "пол пипетки"
+      }
+    ],
+    "method": "перемешать ложкой в мерном стакане",
+    "yield": "1000 мл"
+  }
+];
+const PREP_BY_NAME = {};
+PREP_RECIPES.forEach(p => { PREP_BY_NAME[p.name] = p; });
+
+// Сопоставление названия ингредиента в коктейле (в нижнем регистре) с названием заготовки.
+// Заполняется вручную по мере добавления заготовок — если ингредиент не найден здесь,
+// он просто показывается обычным текстом, без ссылки на попап.
+const PREP_ALIASES = {
+  "smoked tequila": "Копченая текила",
+  "домашний вермут": "Домашний вермут",
+  "домашний вермут кинза": "Домашний вермут",
+  "домашний вермут лайм-базилик": "Вермут базилик-лайм",
+  "апельсиновый шраб": "Апельсиновый шраб",
+  "скотч на кураге": "Скотч на кураге",
+  "красный вермут на кардамоне": "Красный вермут на кардамоне",
+  "кокосовая водка": "Водка на кокосовом масле",
+  "ликер бузина": "Ликер бузины",
+  "кордиал имбирь-корица": "Кордиал имбирь корица",
+  "кордиал корица-имбирь": "Кордиал имбирь корица",
+  "кордиал тархун": "кордиал тархун",
+  "кордиал лайм": "Кордиал горький лайм",
+  "кордиал лимон": "lemon cordial",
+  "lemon cordial": "lemon cordial",
+  "красный чай": "красный чай",
+  "vanilla vodka": "vanilla vodka",
+  "чай на ванили": "чай ваниль",
+  "matcha syrop": "matcha syrop",
+  "cucumber water": "огуречная вода",
+  "forest cordial": "forest cordial",
+  "cordial orange/sinamon": "cordial orange/sinamon",
+  "cordial passion fruit/vanilla/lemon": "cordial Passion Fruit/vanilla/lemon",
+  "porto black pepper": "Portwine papper",
+  "портвейн с черным перцем": "Портвейн на черном перце",
+  "bianco vermouth eucalyptus": "bianco vermouth eucalyptus",
+  "rlk": "RLK",
+  "рлк": "RLK",
+  "вермут апельсин": "Вермут апельсин",
+  "вермут базилик": "Вермут базилик",
+  "вермут жасмин": "Вермут на жасмине",
+  "вермут лайм": "Вермут базилик-лайм",
+  "адвокаат": "Адвокат домашний"
+};
+
+function findPrepForIngredient(ingName){
+  const key = (ingName || "").trim().toLowerCase();
+  const prepName = PREP_ALIASES[key];
+  if (!prepName) return null;
+  return PREP_BY_NAME[prepName] || null;
+}
+
+function renderIngredientRow(ing){
+  const prep = findPrepForIngredient(ing.name);
+  const nameHtml = prep
+    ? `<span class="label prep-ing-name prep-link" data-prep="${prep.name}">${ing.name} 🧪</span>`
+    : `<span class="label">${ing.name}</span>`;
+  return `<div class="sum-row">${nameHtml}<span class="value">${ing.amount || "—"}</span></div>`;
+}
+
+function openPrepModal(prepName){
+  const p = PREP_BY_NAME[prepName];
+  if (!p) return;
+  document.getElementById("prep-modal-title").textContent = `🧪 ${p.name}`;
+  let html = `<div class="section-title">Состав</div><div class="sum-card">`;
+  p.ingredients.forEach(ing => {
+    html += `<div class="sum-row"><span class="label">${ing.name}</span><span class="value">${ing.amount || "—"}</span></div>`;
+  });
+  html += `</div>`;
+  if (p.method){
+    html += `<div class="section-title" style="margin-top:18px;">👨‍🍳 Приготовление</div><div class="sum-card"><div class="sum-row"><span class="label">${p.method}</span></div></div>`;
+  }
+  if (p.yield){
+    html += `<div class="field-hint" style="margin-top:8px;">Выход: ${p.yield}</div>`;
+  }
+  document.getElementById("prep-modal-body").innerHTML = html;
+  document.getElementById("prep-modal-backdrop").classList.add("active");
+}
+
+function closePrepModal(){
+  document.getElementById("prep-modal-backdrop").classList.remove("active");
+}
+
+document.getElementById("prep-modal-close").addEventListener("click", closePrepModal);
+document.getElementById("prep-modal-backdrop").addEventListener("click", (e) => {
+  if (e.target.id === "prep-modal-backdrop") closePrepModal();
+});
+document.getElementById("cocktail-detail-body").addEventListener("click", (e) => {
+  const el = e.target.closest(".prep-link");
+  if (el) openPrepModal(el.dataset.prep);
+});
+
+// Поиск коктейлей должен находить совпадение при наборе (а) не в той раскладке
+// клавиатуры и (б) кириллицей "на слух" (например "негрони" или "куба") — сами
+// названия коктейлей при этом нигде не меняются, преобразуется только запрос.
+const EN_TO_RU_LAYOUT = {
+  "q":"й","w":"ц","e":"у","r":"к","t":"е","y":"н","u":"г","i":"ш","o":"щ","p":"з","[":"х","]":"ъ",
+  "a":"ф","s":"ы","d":"в","f":"а","g":"п","h":"р","j":"о","k":"л","l":"д",";":"ж","'":"э",
+  "z":"я","x":"ч","c":"с","v":"м","b":"и","n":"т","m":"ь",",":"б",".":"ю","`":"ё",
+};
+const RU_TO_EN_LAYOUT = {};
+Object.keys(EN_TO_RU_LAYOUT).forEach(k => { RU_TO_EN_LAYOUT[EN_TO_RU_LAYOUT[k]] = k; });
+
+const RU_TO_LATIN_SOUND = {
+  "а":"a","б":"b","в":"v","г":"g","д":"d","е":"e","ё":"e","ж":"zh","з":"z","и":"i","й":"y",
+  "к":"k","л":"l","м":"m","н":"n","о":"o","п":"p","р":"r","с":"s","т":"t","у":"u","ф":"f",
+  "х":"h","ц":"ts","ч":"ch","ш":"sh","щ":"sch","ъ":"","ы":"y","ь":"","э":"e","ю":"yu","я":"ya",
+};
+
+function convertLayout(str, map){
+  return str.split("").map(ch => map[ch] !== undefined ? map[ch] : ch).join("");
+}
+
+// Кириллица "на слух" -> латиница (не трогает буквы, которых нет в таблице, поэтому
+// латинский текст проходит через эту функцию без изменений).
+function transliterateRuToLatin(str){
+  return str.split("").map(ch => RU_TO_LATIN_SOUND[ch] !== undefined ? RU_TO_LATIN_SOUND[ch] : ch).join("");
+}
+
+// Сглаживает фонетически неоднозначные буквы (к/c звучат одинаково — "куба" даёт "kuba",
+// а название "Cuba" даёт "cuba", сравнивать их напрямую нельзя без этого шага).
+function foldPhonetic(str){
+  return str.replace(/ph/g, "f").replace(/c/g, "k").replace(/q/g, "k");
+}
+
+function normalizeForSearch(str){
+  return foldPhonetic(str.toLowerCase());
+}
+
+function searchVariants(filterText){
+  const f = (filterText || "").trim().toLowerCase();
+  if (!f) return [];
+  const raw = new Set([f, convertLayout(f, EN_TO_RU_LAYOUT), convertLayout(f, RU_TO_EN_LAYOUT), transliterateRuToLatin(f)]);
+  const normalized = new Set();
+  raw.forEach(v => { const n = normalizeForSearch(v); if (n) normalized.add(n); });
+  return [...normalized];
+}
+
+function renderCocktailsList(filterText){
+  const container = document.getElementById("cocktails-list");
+  container.innerHTML = "";
+  const variants = searchVariants(filterText);
+  const list = COCKTAILS_SORTED.filter(c => {
+    if (!variants.length) return true;
+    const nm = normalizeForSearch(c.name);
+    return variants.some(v => nm.includes(v));
+  });
+  if (COCKTAILS_SORTED.length === 0){
+    container.innerHTML = `<div class="field-hint" style="padding:10px 0;">Техничек пока нет — они появятся здесь по мере добавления.</div>`;
+    return;
+  }
+  if (list.length === 0){
+    container.innerHTML = `<div class="field-hint" style="padding:10px 0;">Ничего не найдено</div>`;
+    return;
+  }
+  list.forEach(c => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "option-btn";
+    btn.style.marginBottom = "10px";
+    btn.innerHTML = `<span>${c.icon || '🍸'} ${c.name}</span><span class="arrow">›</span>`;
+    btn.addEventListener("click", () => openCocktailDetail(c.name));
+    container.appendChild(btn);
+  });
+}
+
+function openCocktailDetail(name){
+  const c = COCKTAILS_SORTED.find(x => x.name === name);
+  if (!c) return;
+  document.getElementById("cocktail-detail-title").textContent = `${c.icon || "🍸"} ${c.name}`;
+  const body = document.getElementById("cocktail-detail-body");
+  let html = "";
+  const metaParts = [];
+  if (c.glass) metaParts.push(`Бокал: ${c.glass}`);
+  if (c.method) metaParts.push(`Метод: ${c.method}`);
+  if (c.garnish) metaParts.push(`Украшение: ${c.garnish}`);
+  if (metaParts.length){
+    html += `<div class="field-hint" style="margin-bottom:16px;">${metaParts.join(" · ")}</div>`;
+  }
+  html += `<div class="section-title">🧾 Состав (на 1 порцию)</div><div class="sum-card">`;
+  c.ingredients.forEach(ing => {
+    html += renderIngredientRow(ing);
+  });
+  html += `</div>`;
+  if (c.premix && c.premix.items && c.premix.items.length){
+    html += `<div class="section-title" style="margin-top:22px;">🧪 Премикс${c.premix.note ? ` (${c.premix.note})` : ""}</div><div class="sum-card">`;
+    c.premix.items.forEach(ing => {
+      html += renderIngredientRow(ing);
+    });
+    html += `</div>`;
+    if (c.premix.yield){
+      html += `<div class="field-hint" style="margin-top:6px;">Выход премикса: ${c.premix.yield}</div>`;
+    }
+  } else {
+    html += `<div class="field-hint" style="margin-top:8px;">Премикс не готовится — делать сразу на заказ</div>`;
+  }
+  if (c.steps && c.steps.length){
+    html += `<div class="section-title" style="margin-top:22px;">👨‍🍳 Сборка</div>`;
+    c.steps.forEach((step, i) => {
+      html += `<div class="sum-card" style="margin-top:8px;"><div class="sum-row"><span class="label">${i+1}. ${step}</span></div></div>`;
+    });
+  }
+  body.innerHTML = html;
+  showScreen("screen-cocktail-detail");
+}
+
+document.getElementById("go-cocktails").addEventListener("click", () => {
+  document.getElementById("cocktails-search").value = "";
+  renderCocktailsList("");
+  showScreen("screen-cocktails");
+});
+document.getElementById("back-from-cocktails").addEventListener("click", () => showScreen("screen-root"));
+document.getElementById("back-from-cocktail-detail").addEventListener("click", () => showScreen("screen-cocktails"));
+document.getElementById("cocktails-search").addEventListener("input", e => renderCocktailsList(e.target.value));
 
 /* ---------- procurement request: per-section day gating ---------- */
 const PROCUREMENT_TEST_MODE = true; // ВРЕМЕННО: true = все разделы открыты в любой день, для теста/обучения сотрудников. Поставь false, чтобы включить боевой режим (заявки только по средам и воскресеньям).
@@ -2159,6 +9839,66 @@ const INFUSION_RECIPES = [
   ], assumption: "Крепость водки не указана — принято 30%, как в большинстве рецептов. «Сахар 100» без единицы измерения — принято за сахарный сироп 100 мл, по аналогии с остальными рецептами." },
 ];
 const INFUSIONS_SORTED = [...INFUSION_RECIPES].sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+
+/* ---------- НАСТОЙКИ (справочник техничек, только для чтения) ---------- */
+// Использует те же данные INFUSION_RECIPES, что и заявка на закупку настоек.
+// Количества ингредиентов — расчёт на 1 литр (один стандартный замес).
+function renderIngredientRowQtyUnit(ing){
+  const amount = `${ing.qty} ${ing.unit}`;
+  const prep = findPrepForIngredient(ing.name);
+  const nameHtml = prep
+    ? `<span class="label prep-ing-name prep-link" data-prep="${prep.name}">${ing.name} 🧪</span>`
+    : `<span class="label">${ing.name}</span>`;
+  return `<div class="sum-row">${nameHtml}<span class="value">${amount}</span></div>`;
+}
+
+function renderInfusionsRefList(filterText){
+  const container = document.getElementById("infusions-ref-list");
+  container.innerHTML = "";
+  const f = (filterText || "").trim().toLowerCase();
+  const list = INFUSIONS_SORTED.filter(r => !f || r.name.toLowerCase().includes(f));
+  if (list.length === 0){
+    container.innerHTML = `<div class="field-hint" style="padding:10px 0;">Ничего не найдено</div>`;
+    return;
+  }
+  list.forEach(r => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "option-btn";
+    btn.style.marginBottom = "10px";
+    btn.innerHTML = `<span>🫙 ${r.name}</span><span class="arrow">›</span>`;
+    btn.addEventListener("click", () => openInfusionRefDetail(r.name));
+    container.appendChild(btn);
+  });
+}
+
+function openInfusionRefDetail(name){
+  const r = INFUSIONS_SORTED.find(x => x.name === name);
+  if (!r) return;
+  document.getElementById("infusion-ref-detail-title").textContent = `🫙 ${r.name}`;
+  const body = document.getElementById("infusion-ref-detail-body");
+  let html = `<div class="field-hint" style="margin-bottom:16px;">Расчёт на 1 литр (один стандартный замес)</div>`;
+  html += `<div class="section-title">🧾 Состав</div><div class="sum-card">`;
+  r.ingredients.forEach(ing => {
+    html += renderIngredientRowQtyUnit(ing);
+  });
+  html += `</div>`;
+  body.innerHTML = html;
+  showScreen("screen-infusion-ref-detail");
+}
+
+document.getElementById("go-infusions-ref").addEventListener("click", () => {
+  document.getElementById("infusions-ref-search").value = "";
+  renderInfusionsRefList("");
+  showScreen("screen-infusions-ref");
+});
+document.getElementById("back-from-infusions-ref").addEventListener("click", () => showScreen("screen-root"));
+document.getElementById("back-from-infusion-ref-detail").addEventListener("click", () => showScreen("screen-infusions-ref"));
+document.getElementById("infusions-ref-search").addEventListener("input", e => renderInfusionsRefList(e.target.value));
+document.getElementById("infusion-ref-detail-body").addEventListener("click", (e) => {
+  const el = e.target.closest(".prep-link");
+  if (el) openPrepModal(el.dataset.prep);
+});
 
 // Поставщик по каждому сырьевому ингредиенту (не по настойке) — используется, чтобы в
 // итоговом списке закупки сразу было видно, у кого что брать. Ингредиенты без поставщика
