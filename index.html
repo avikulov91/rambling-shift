@@ -1,0 +1,2338 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Rambling — Смены (превью)</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Палитра на основе бренд-цвета Rambling Bar (кирпично-красный #a60f04 с логотипа) */
+    --bg: #150f0d;
+    --surface: #201714;
+    --surface-2: #2b1f1a;
+    --line: #3d2a23;
+    --text: #f3e8e0;
+    --text-dim: #ab9186;
+    --amber: #c81707;
+    --amber-dim: #4a1209;
+    --sage: #7fae7a;
+    --sage-dim: #2a3a2a;
+    --red: #e2a13d;
+    --red-dim: #4a3a20;
+    --radius: 14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    display:flex;
+    justify-content:center;
+  }
+  #app{
+    width:100%;
+    max-width:480px;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+  .screen{ display:none; flex-direction:column; min-height:100vh; }
+  .screen.active{ display:flex; }
+
+  .center-screen{
+    justify-content:center;
+    padding: 32px 24px 48px;
+    text-align:center;
+  }
+  .glass-icon{ font-size:44px; margin-bottom:6px; }
+  .start-title{
+    font-family: 'Anton', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size:26px;
+    font-weight:400;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    margin: 4px 0 4px;
+  }
+  .start-sub{
+    color: var(--text-dim);
+    font-size:15px;
+    margin-bottom:28px;
+  }
+  .option-list{ display:flex; flex-direction:column; gap:12px; }
+  .option-btn{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 18px 20px;
+    border-radius: var(--radius);
+    font-size:17px;
+    font-weight:600;
+    text-align:left;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .option-btn:active{ background: var(--surface-2); border-color: var(--amber-dim); }
+  .option-btn .arrow{ color: var(--text-dim); font-size:18px; }
+  .option-btn .sub{ display:block; font-size:12.5px; font-weight:500; color: var(--text-dim); margin-top:2px; }
+  .option-btn.disabled{ opacity:0.45; pointer-events:none; }
+
+  .back-link{
+    position:sticky; top:0; background:transparent; color: var(--text-dim);
+    font-size:14px; padding: 16px 20px 0; text-align:left; align-self:flex-start;
+  }
+
+  .top-bar{
+    position:sticky; top:0; z-index:5; background: var(--bg);
+    padding: 18px 20px 14px; border-bottom: 1px solid var(--line);
+  }
+  .top-bar-title{ font-family: 'Anton', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size:19px; font-weight:400; letter-spacing:0.3px; text-transform:uppercase; display:flex; align-items:center; gap:8px; }
+  .top-bar-meta{ color: var(--text-dim); font-size:13px; margin-top:4px; }
+
+  .form-body{ padding: 20px 20px 4px; flex:1; }
+
+  .field-block{ margin-bottom: 20px; }
+  .field-label{ font-size:14px; font-weight:700; color: var(--text-dim); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+  .field-hint{ font-size:12.5px; color: var(--text-dim); margin-top:6px; }
+
+  .chip-row{ display:flex; flex-wrap:wrap; gap:10px; }
+  .chip{
+    background: var(--surface); border: 1px solid var(--line); color: var(--text);
+    padding: 12px 16px; border-radius: 999px; font-size:15px; font-weight:600;
+  }
+  .chip.selected{ background: var(--sage-dim); border-color: rgba(127,174,122,0.5); color: var(--sage); }
+
+  .input-row{ display:flex; gap:12px; }
+  .input-col{ flex:1; }
+  .input-col-label{ font-size:12.5px; color: var(--text-dim); margin-bottom:6px; }
+  .num-input, .text-input{
+    width:100%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 16px;
+    padding: 13px 14px;
+  }
+  .num-input:focus, .text-input:focus, .beer-qty-input:focus{ outline:none; border-color: var(--amber-dim); }
+
+  .sum-card{
+    background: var(--surface); border:1px solid var(--line); border-radius: var(--radius);
+    padding: 14px 16px; margin-top:12px;
+  }
+  .sum-row{ display:flex; justify-content:space-between; font-size:14.5px; padding:4px 0; }
+  .sum-row .label{ color: var(--text-dim); }
+  .sum-row .value{ font-weight:700; }
+  .sum-row.total{ border-top:1px solid var(--line); margin-top:6px; padding-top:10px; font-size:16px; }
+
+  .diff-card{
+    border-radius: var(--radius); padding: 14px 16px; margin-top:14px;
+    display:flex; justify-content:space-between; align-items:center;
+    background: var(--sage-dim); border:1px solid rgba(127,174,122,0.4);
+  }
+  .diff-card.mismatch{
+    background: var(--red-dim); border-color: rgba(226,161,61,0.5);
+  }
+  .diff-card .label{ font-size:14px; font-weight:700; }
+  .diff-card .value{ font-size:16px; font-weight:800; }
+  .diff-card.ok .value{ color: var(--sage); }
+  .diff-card.mismatch .value{ color: var(--red); }
+
+  .section-divider{
+    border:none; border-top:1px solid var(--line); margin: 26px 0 18px;
+  }
+  .section-title{ font-size:14px; font-weight:700; color: var(--text-dim); margin-bottom:14px; display:flex; align-items:center; gap:6px; }
+
+  .expense-row{
+    display:flex; gap:10px; align-items:flex-end; margin-bottom:10px;
+  }
+  .expense-row .input-col{ flex:1; }
+  .expense-row .amount-col{ width:110px; flex:none; }
+  .remove-expense{
+    flex:none; width:44px; height:44px; border-radius:12px; border:1px solid var(--line);
+    background: var(--surface); color: var(--red); font-size:18px; font-weight:700;
+  }
+  .add-expense-btn{
+    width:100%; padding:13px; border-radius:12px; border:1px dashed var(--line);
+    background:transparent; color: var(--text-dim); font-size:14.5px; font-weight:600; margin-top:4px;
+  }
+  .add-expense-btn:active{ background: var(--surface-2); }
+
+  .beer-item{
+    background: var(--surface); border:1px solid var(--line); border-radius: var(--radius);
+    padding: 14px 16px; margin-bottom:10px;
+  }
+  .beer-item-name{ font-size:15.5px; font-weight:600; color: var(--text); }
+  .beer-item-supplier{ display:block; font-size:12.5px; font-weight:500; color: var(--text-dim); margin-top:2px; }
+  .beer-input-row{ display:flex; gap:8px; margin-top:12px; align-items:stretch; }
+  .beer-qty-input{
+    flex:1; min-width:0; background: var(--surface-2); border:1px solid var(--line); border-radius:10px;
+    color: var(--text); font-family:inherit; font-size:14px; padding:10px 12px;
+  }
+  .beer-qty-input:disabled{ opacity:0.4; }
+  .beer-toggle-btn{
+    flex:0 0 104px; padding:10px; border-radius:10px; border:1px solid var(--line);
+    background: var(--surface-2); color: var(--text-dim); font-size:13px; font-weight:600;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .beer-toggle-btn.active-notneed{ background: var(--red-dim); border-color: rgba(226,161,61,0.5); color: var(--red); }
+
+  .final-card{
+    background: var(--surface); border:2px solid var(--amber-dim); border-radius: var(--radius);
+    padding: 18px; margin-top: 22px; text-align:center;
+  }
+  .final-card .label{ font-size:13.5px; color: var(--text-dim); font-weight:600; margin-bottom:6px; }
+  .final-card .value{ font-size:30px; font-weight:800; color: var(--amber); }
+
+  .bottom-bar{
+    width:100%; max-width:480px; margin: 24px auto 0;
+    padding: 0 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+  .finish-hint{ text-align:center; color: var(--text-dim); font-size:13px; margin-bottom:10px; }
+  .finish-hint.angry{ color: var(--red); font-weight: 700; }
+  .finish-btn{
+    width:100%; padding:17px; border-radius: var(--radius); border:none; font-size:16px; font-weight:700;
+    background: var(--surface-2); color: var(--text-dim); transition: background .2s ease, color .2s ease;
+  }
+  .finish-btn.ready{ background: var(--amber); color: #fbeee6; }
+  .finish-btn.ready:active{ background: #a01305; }
+  .finish-btn.shake{ animation: shake .4s ease; }
+  @keyframes shake{
+    0%,100%{transform:translateX(0);} 20%{transform:translateX(-6px);} 40%{transform:translateX(6px);}
+    60%{transform:translateX(-4px);} 80%{transform:translateX(4px);}
+  }
+
+  #screen-done{ justify-content:center; align-items:center; text-align:center; padding: 40px 28px; }
+  .done-badge{ font-size:48px; margin-bottom:10px; }
+  .done-title{ font-family: 'Anton', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size:22px; font-weight:400; letter-spacing:0.3px; text-transform:uppercase; margin-bottom:18px; }
+  .send-status{
+    background: rgba(200,23,7,0.12); border:1px solid rgba(200,23,7,0.4); color: var(--amber);
+    font-size:13px; font-weight:600; padding:10px 14px; border-radius:12px; margin-bottom:18px;
+    text-align:left; display:none;
+  }
+  .send-status.status-ok{ background: rgba(127,174,122,0.14); border-color: rgba(127,174,122,0.5); color: var(--sage); }
+  .send-status.status-error{ background: rgba(200,23,7,0.16); border-color: rgba(200,23,7,0.55); color: #ff6a5a; }
+  .msg-preview{
+    width:100%; background: var(--surface); border:1px solid var(--line); border-radius: var(--radius);
+    padding: 16px; text-align:left; margin-bottom:24px; font-size:14px; line-height:1.6; white-space:pre-wrap;
+  }
+  .home-btn{
+    width:100%; padding:15px; border-radius: var(--radius); border:1px solid var(--line);
+    background: var(--surface); color: var(--text); font-size:15px; font-weight:600;
+  }
+  .home-btn:active{ background: var(--surface-2); }
+
+  .calc-toggle-btn{
+    margin-top:10px; padding:8px 12px; border-radius:10px; border:1px dashed var(--line);
+    background:transparent; color: var(--text-dim); font-size:13px; font-weight:600;
+  }
+  .calc-toggle-btn:active{ background: var(--surface-2); }
+  .calc-panel{
+    margin-top:10px; padding:12px; border-radius: var(--radius);
+    background: var(--surface-2); border:1px solid var(--line);
+  }
+  .calc-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+  .calc-row{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    background: var(--surface); border-radius:10px; padding:6px 10px;
+  }
+  .calc-row-label{ font-size:13.5px; font-weight:600; color: var(--text); }
+  .calc-row input{
+    width:56px; text-align:center; background: var(--bg); border:1px solid var(--line); border-radius:8px;
+    color: var(--text); font-size:14px; padding:6px 4px;
+  }
+  .calc-row input:focus{ outline:none; border-color: var(--amber-dim); }
+  .calc-total-row{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:12px; font-size:14.5px; font-weight:700; color: var(--text);
+  }
+  .calc-total{ color: var(--amber); }
+  .calc-apply-btn{
+    width:100%; margin-top:10px; padding:11px; border-radius:10px; border:none;
+    background: var(--amber); color:#fff; font-size:14px; font-weight:700;
+  }
+  .calc-apply-btn:active{ opacity:0.85; }
+
+  .reminder-banner{
+    width:100%;
+    background: linear-gradient(135deg, #ff2b1f, var(--amber));
+    border: 2px solid #ffce33;
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin: 0 0 16px;
+    animation: reminder-pulse 1.3s ease-in-out infinite;
+  }
+  .reminder-banner-title{
+    display:flex; align-items:center; gap:8px;
+    font-size:15px; font-weight:800; color:#fff;
+    text-transform:uppercase; letter-spacing:0.3px;
+  }
+  .reminder-banner-list{
+    margin-top:6px; font-size:14px; font-weight:700; color:#fff3d6; line-height:1.5;
+  }
+  @keyframes reminder-pulse{
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,43,31,0.55); transform: scale(1); }
+    50% { box-shadow: 0 0 0 9px rgba(255,43,31,0); transform: scale(1.015); }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SCREEN -1: actions menu (first screen) -->
+  <div class="screen active center-screen" id="screen-root">
+    <div class="glass-icon">🍸</div>
+    <div class="start-title">Rambling</div>
+    <div class="start-sub">Выберите раздел</div>
+    <div class="reminder-banner" id="reminder-banner" style="display:none;">
+      <div class="reminder-banner-title" id="reminder-banner-title">⚠️ Сегодня день заявок</div>
+      <div class="reminder-banner-list" id="reminder-banner-list"></div>
+    </div>
+    <div class="option-list">
+      <button class="option-btn" id="go-cash-menu"><span>💰 Открытие/закрытие кассы</span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-procurement">
+        <span>🧾 Заявка на закупку<span class="sub" id="procurement-sub" style="display:none;">Доступно по средам и воскресеньям</span></span>
+        <span class="arrow">›</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- SCREEN: beer order -->
+  <div class="screen" id="screen-beer">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-beer" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">🍺 Заявка на пиво</div>
+      <div class="top-bar-meta" id="beer-meta"></div>
+    </div>
+    <div class="form-body">
+
+      <div class="field-block">
+        <div class="field-label">Бармен</div>
+        <div class="chip-row" id="beer-employee-chips"></div>
+        <button class="add-expense-btn" id="beer-toggle-extra" type="button" style="margin-top:10px;">+ Дополнительный бармен</button>
+        <div id="beer-extra-wrap" style="display:none; margin-top:10px;">
+          <input class="text-input" type="text" id="beer-extra-name" placeholder="Имя дополнительного бармена">
+        </div>
+      </div>
+
+      <hr class="section-divider">
+      <div class="section-title">🍻 Разливное</div>
+      <div id="beer-draft-items"></div>
+
+      <hr class="section-divider">
+      <div class="section-title">🛢 Газ / оборудование</div>
+      <div id="beer-equipment-items"></div>
+
+    </div>
+    <div class="bottom-bar">
+      <div class="finish-hint" id="beer-hint">Отметьте по каждой позиции: нужно или не нужно</div>
+      <button class="finish-btn" id="beer-submit">🔒 Отправить заявку</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: herbs order -->
+  <div class="screen" id="screen-herbs">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-herbs" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">🌿 Заявка на зелень</div>
+      <div class="top-bar-meta" id="herbs-meta"></div>
+    </div>
+    <div class="form-body">
+
+      <div class="field-block">
+        <div class="field-label">Бармен</div>
+        <div class="chip-row" id="herbs-employee-chips"></div>
+        <button class="add-expense-btn" id="herbs-toggle-extra" type="button" style="margin-top:10px;">+ Дополнительный бармен</button>
+        <div id="herbs-extra-wrap" style="display:none; margin-top:10px;">
+          <input class="text-input" type="text" id="herbs-extra-name" placeholder="Имя дополнительного бармена">
+        </div>
+      </div>
+
+      <hr class="section-divider">
+      <div class="section-title">🌱 Зелень<span style="font-weight:500; color:var(--text-dim);"> — Оранжерея (Рынок)</span></div>
+      <div id="herbs-items"></div>
+
+      <div class="field-block" style="margin-top:20px;">
+        <div class="field-label">💬 Комментарий</div>
+        <textarea class="text-input" id="herbs-comment" rows="2" placeholder="Необязательно" style="resize:vertical;"></textarea>
+      </div>
+
+    </div>
+    <div class="bottom-bar">
+      <div class="finish-hint" id="herbs-hint">Отметьте по каждой позиции: нужно или не нужно</div>
+      <button class="finish-btn" id="herbs-submit">🔒 Отправить заявку</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: procurement submenu -->
+  <div class="screen center-screen" id="screen-procurement">
+    <div class="back-link" id="back-from-procurement">← Назад</div>
+    <div class="glass-icon">🧾</div>
+    <div class="start-title">Заявка на закупку</div>
+    <div class="start-sub">Выберите раздел</div>
+    <div class="option-list">
+      <button class="option-btn" id="go-beer"><span>🍺 Заявка на пиво<span class="sub" id="beer-day-sub" style="display:none;">Доступно по средам</span></span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-herbs"><span>🌿 Заявка на зелень<span class="sub" id="herbs-day-sub" style="display:none;">Доступно по воскресеньям</span></span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-alcohol"><span>🥃 Заявка на алкоголь<span class="sub" id="alcohol-day-sub" style="display:none;">Доступно по воскресеньям</span></span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-household"><span>🧽 Заявка на хозтовары<span class="sub" id="household-day-sub" style="display:none;">Доступно по воскресеньям</span></span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-fruits"><span>🍋 Заявка на фрукты<span class="sub" id="fruits-day-sub" style="display:none;">Доступно по средам</span></span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-infusions"><span>🫙 Заявка на настойки<span class="sub" id="infusions-day-sub" style="display:none;">Доступно по средам</span></span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-custom"><span>📝 Нестандартная заявка</span><span class="arrow">›</span></button>
+    </div>
+  </div>
+
+  <!-- SCREEN: custom (free-form) order -->
+  <div class="screen" id="screen-custom">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-custom" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">📝 Нестандартная заявка</div>
+      <div class="top-bar-meta" id="custom-meta"></div>
+    </div>
+    <div class="form-body">
+
+      <div class="field-block">
+        <div class="field-label">Бармен</div>
+        <div class="chip-row" id="custom-employee-chips"></div>
+        <button class="add-expense-btn" id="custom-toggle-extra" type="button" style="margin-top:10px;">+ Дополнительный бармен</button>
+        <div id="custom-extra-wrap" style="display:none; margin-top:10px;">
+          <input class="text-input" type="text" id="custom-extra-name" placeholder="Имя дополнительного бармена">
+        </div>
+      </div>
+
+      <div class="field-block">
+        <div class="field-label">Что нужно заказать</div>
+        <textarea class="text-input" id="custom-text" rows="8" placeholder="Опиши, что нужно: название, количество, поставщик (если знаешь)" style="resize:vertical;"></textarea>
+      </div>
+
+    </div>
+    <div class="bottom-bar">
+      <div class="finish-hint" id="custom-hint">Выбери бармена и опиши, что нужно</div>
+      <button class="finish-btn" id="custom-submit">🔒 Отправить заявку</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: infusions (настойки) order -->
+  <div class="screen" id="screen-infusions">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-infusions" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">🫙 Заявка на настойки</div>
+      <div class="top-bar-meta" id="infusions-meta"></div>
+    </div>
+    <div class="form-body">
+
+      <div class="field-block">
+        <div class="field-label">Бармен</div>
+        <div class="chip-row" id="infusions-employee-chips"></div>
+        <button class="add-expense-btn" id="infusions-toggle-extra" type="button" style="margin-top:10px;">+ Дополнительный бармен</button>
+        <div id="infusions-extra-wrap" style="display:none; margin-top:10px;">
+          <input class="text-input" type="text" id="infusions-extra-name" placeholder="Имя дополнительного бармена">
+        </div>
+      </div>
+
+      <div class="field-block">
+        <div class="field-label">Другое</div>
+        <div class="beer-item">
+          <div class="beer-item-name">🧪 Спирт</div>
+          <div class="beer-input-row">
+            <input class="beer-qty-input" type="text" id="infusions-spirt" placeholder="Например: 5 л">
+            <button type="button" class="beer-toggle-btn" id="infusions-spirt-notneed" data-role="notneed">Не нужно</button>
+          </div>
+        </div>
+        <div class="beer-item">
+          <div class="beer-item-name">🍋 Лимонная кислота</div>
+          <div class="beer-input-row">
+            <input class="beer-qty-input" type="text" id="infusions-acid" placeholder="Например: 1 кг">
+            <button type="button" class="beer-toggle-btn" id="infusions-acid-notneed" data-role="notneed">Не нужно</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-block">
+        <div class="field-label">Какие настойки нужны</div>
+        <input class="text-input" type="text" id="infusions-search" placeholder="🔍 Поиск настойки по названию">
+        <div class="field-hint">Укажи количество литров для нужных настоек, остальные оставь пустыми — сырьё на закупку посчитается автоматически</div>
+      </div>
+
+      <div id="infusions-items"></div>
+
+    </div>
+    <div class="bottom-bar">
+      <div class="finish-hint" id="infusions-hint">Выбери бармена и укажи количество хотя бы одной позиции</div>
+      <button class="finish-btn" id="infusions-submit">🔒 Отправить заявку</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: fruits order -->
+  <div class="screen" id="screen-fruits">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-fruits" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">🍋 Заявка на фрукты</div>
+      <div class="top-bar-meta" id="fruits-meta"></div>
+    </div>
+    <div class="form-body">
+
+      <div class="field-block">
+        <div class="field-label">Бармен</div>
+        <div class="chip-row" id="fruits-employee-chips"></div>
+        <button class="add-expense-btn" id="fruits-toggle-extra" type="button" style="margin-top:10px;">+ Дополнительный бармен</button>
+        <div id="fruits-extra-wrap" style="display:none; margin-top:10px;">
+          <input class="text-input" type="text" id="fruits-extra-name" placeholder="Имя дополнительного бармена">
+        </div>
+      </div>
+
+      <hr class="section-divider">
+      <div class="section-title">🍊 Фрукты</div>
+      <div id="fruits-items"></div>
+
+    </div>
+    <div class="bottom-bar">
+      <div class="finish-hint" id="fruits-hint">Отметьте по каждой позиции: нужно или не нужно</div>
+      <button class="finish-btn" id="fruits-submit">🔒 Отправить заявку</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: household supplies order -->
+  <div class="screen" id="screen-household">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-household" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">🧽 Заявка на хозтовары</div>
+      <div class="top-bar-meta" id="household-meta"></div>
+    </div>
+    <div class="form-body">
+
+      <div class="field-block">
+        <div class="field-label">Бармен</div>
+        <div class="chip-row" id="household-employee-chips"></div>
+        <button class="add-expense-btn" id="household-toggle-extra" type="button" style="margin-top:10px;">+ Дополнительный бармен</button>
+        <div id="household-extra-wrap" style="display:none; margin-top:10px;">
+          <input class="text-input" type="text" id="household-extra-name" placeholder="Имя дополнительного бармена">
+        </div>
+        <div class="field-hint">Поставщик: Хозяйственный магазин / рынок</div>
+      </div>
+
+      <div id="household-sections"></div>
+
+      <div class="field-block" style="margin-top:20px;">
+        <div class="field-label">💬 Комментарий</div>
+        <textarea class="text-input" id="household-comment" rows="2" placeholder="Необязательно" style="resize:vertical;"></textarea>
+      </div>
+
+    </div>
+    <div class="bottom-bar">
+      <div class="finish-hint" id="household-hint">Отметьте по каждой позиции: нужно или не нужно</div>
+      <button class="finish-btn" id="household-submit">🔒 Отправить заявку</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: alcohol order -->
+  <div class="screen" id="screen-alcohol">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-alcohol" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">🥃 Заявка на алкоголь</div>
+      <div class="top-bar-meta" id="alcohol-meta"></div>
+    </div>
+    <div class="form-body">
+
+      <div class="field-block">
+        <div class="field-label">Бармен</div>
+        <div class="chip-row" id="alcohol-employee-chips"></div>
+        <button class="add-expense-btn" id="alcohol-toggle-extra" type="button" style="margin-top:10px;">+ Дополнительный бармен</button>
+        <div id="alcohol-extra-wrap" style="display:none; margin-top:10px;">
+          <input class="text-input" type="text" id="alcohol-extra-name" placeholder="Имя дополнительного бармена">
+        </div>
+      </div>
+
+      <div id="alcohol-sections"></div>
+
+    </div>
+    <div class="bottom-bar">
+      <div class="finish-hint" id="alcohol-hint">Заполните количество там, где нужно заказать</div>
+      <button class="finish-btn" id="alcohol-submit">🔒 Отправить заявку</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 0: cash menu -->
+  <div class="screen center-screen" id="screen-menu">
+    <div class="back-link" id="back-from-menu">← Назад</div>
+    <div class="glass-icon">🍸</div>
+    <div class="start-title">Rambling — Смены</div>
+    <div class="start-sub">Выберите действие</div>
+    <div class="option-list">
+      <button class="option-btn" id="go-open"><span>🟢 Открыть кассу</span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-close"><span>🔴 Закрыть кассу</span><span class="arrow">›</span></button>
+    </div>
+  </div>
+
+  <!-- SCREEN 1: open shift -->
+  <div class="screen" id="screen-open">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-open" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">🟢 Открытие кассы</div>
+      <div class="top-bar-meta" id="open-meta"></div>
+    </div>
+    <div class="form-body">
+      <div class="field-block">
+        <div class="field-label">Кто на смене</div>
+        <div class="chip-row" id="open-employee-chips"></div>
+        <button class="add-expense-btn" id="open-toggle-extra" type="button" style="margin-top:10px;">+ Дополнительный бармен</button>
+        <div id="open-extra-wrap" style="display:none; margin-top:10px;">
+          <input class="text-input" type="text" id="open-extra-name" placeholder="Имя дополнительного бармена">
+        </div>
+        <div class="field-hint">Можно выбрать любое количество из списка (хоть всех троих), плюс доп. бармена при необходимости</div>
+      </div>
+      <div class="field-block">
+        <div class="field-label">Касса на начало смены</div>
+        <input class="num-input" type="number" inputmode="decimal" id="open-cash" placeholder="0">
+        <button type="button" class="calc-toggle-btn" id="open-cash-calc-toggle">🧮 Посчитать по купюрам</button>
+        <div class="calc-panel" id="open-cash-calc-panel" style="display:none;">
+          <div class="calc-grid" id="open-cash-calc-grid"></div>
+          <div class="calc-total-row"><span>Итого:</span><span class="calc-total" id="open-cash-calc-total">0 ₾</span></div>
+          <button type="button" class="calc-apply-btn" id="open-cash-calc-apply">Подставить в поле</button>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-bar">
+      <div class="finish-hint" id="open-hint">Выберите сотрудника и укажите сумму</div>
+      <button class="finish-btn" id="open-submit">🔒 Открыть кассу</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: close shift -->
+  <div class="screen" id="screen-close">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-close" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">🔴 Закрытие кассы</div>
+      <div class="top-bar-meta" id="close-meta"></div>
+    </div>
+    <div class="form-body">
+
+      <div class="field-block">
+        <div class="field-label">Кто работал</div>
+        <div class="chip-row" id="close-employee-chips"></div>
+        <button class="add-expense-btn" id="close-toggle-extra" type="button" style="margin-top:10px;">+ Дополнительный бармен</button>
+        <div id="close-extra-wrap" style="display:none; margin-top:10px;">
+          <input class="text-input" type="text" id="close-extra-name" placeholder="Имя дополнительного бармена">
+        </div>
+      </div>
+
+      <div class="field-block">
+        <div class="field-label">Касса на начало смены</div>
+        <input class="num-input" type="number" inputmode="decimal" id="close-opening-cash" placeholder="0">
+        <div class="field-hint">Сумма, с которой открывали смену — посмотри в сообщении об открытии</div>
+        <button type="button" class="calc-toggle-btn" id="close-cash-calc-toggle">🧮 Посчитать по купюрам</button>
+        <div class="calc-panel" id="close-cash-calc-panel" style="display:none;">
+          <div class="calc-grid" id="close-cash-calc-grid"></div>
+          <div class="calc-total-row"><span>Итого:</span><span class="calc-total" id="close-cash-calc-total">0 ₾</span></div>
+          <button type="button" class="calc-apply-btn" id="close-cash-calc-apply">Подставить в поле</button>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+      <div class="section-title">📟 По Постеру</div>
+      <div class="input-row">
+        <div class="input-col">
+          <div class="input-col-label">Наличными</div>
+          <input class="num-input" type="number" inputmode="decimal" id="poster-cash" placeholder="0">
+        </div>
+        <div class="input-col">
+          <div class="input-col-label">Картой</div>
+          <input class="num-input" type="number" inputmode="decimal" id="poster-card" placeholder="0">
+        </div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-row total"><span class="label">Итого по Постеру</span><span class="value" id="poster-total">0 ₾</span></div>
+      </div>
+
+      <hr class="section-divider">
+      <div class="section-title">💵 Фактически</div>
+      <div class="input-row">
+        <div class="input-col">
+          <div class="input-col-label">Наличными (пересчитали)</div>
+          <input class="num-input" type="number" inputmode="decimal" id="actual-cash" placeholder="0">
+        </div>
+        <div class="input-col">
+          <div class="input-col-label">Картой (чек с терминала)</div>
+          <input class="num-input" type="number" inputmode="decimal" id="actual-card" placeholder="0">
+        </div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-row total"><span class="label">Итого фактически</span><span class="value" id="actual-total">0 ₾</span></div>
+      </div>
+
+      <div class="diff-card ok" id="diff-card">
+        <span class="label">Разница (факт − Постер)</span>
+        <span class="value" id="diff-value">0 ₾</span>
+      </div>
+
+      <div class="field-block" style="margin-top:12px;">
+        <div class="input-col-label" style="margin-bottom:6px;">Комментарий к расхождению (необязательно)</div>
+        <textarea class="text-input" id="diff-comment" rows="2" placeholder="Почему не сошлось, если не сошлось" style="resize:vertical;"></textarea>
+      </div>
+
+      <hr class="section-divider">
+      <div class="section-title">💸 Траты за смену</div>
+
+      <div class="input-row">
+        <div class="input-col">
+          <div class="input-col-label">Зарплата за смену</div>
+          <input class="num-input" type="number" inputmode="decimal" id="salary" placeholder="0">
+        </div>
+        <div class="input-col">
+          <div class="input-col-label">Чаевые картой (забрали нал.)</div>
+          <input class="num-input" type="number" inputmode="decimal" id="card-tips" placeholder="0">
+        </div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div class="input-col-label" style="margin-bottom:10px;">Прочие траты</div>
+        <div id="expense-rows"></div>
+        <button class="add-expense-btn" id="add-expense" type="button">+ Добавить трату</button>
+      </div>
+
+      <div class="final-card">
+        <div class="label">Остаток наличных в кассе</div>
+        <div class="value" id="final-balance">0 ₾</div>
+      </div>
+
+      <div class="field-block" style="margin-top:20px;">
+        <div class="field-label">📝 Заметки для следующей смены</div>
+        <textarea class="text-input" id="close-notes" rows="3" placeholder="Например: закончился лёд, нужно заказать, гость оставил жалобу и т.п." style="resize:vertical;"></textarea>
+      </div>
+
+    </div>
+    <div class="bottom-bar">
+      <div class="finish-hint" id="close-hint">Заполните все поля</div>
+      <button class="finish-btn" id="close-submit">🔒 Закрыть кассу</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: done -->
+  <div class="screen center-screen" id="screen-done">
+    <div class="done-badge" id="done-badge">🟢</div>
+    <div class="done-title" id="done-title">Готово</div>
+    <div class="send-status" id="send-status"></div>
+    <div class="msg-preview" id="msg-preview"></div>
+    <button class="home-btn" id="home-btn">← В начало</button>
+  </div>
+
+</div>
+
+<script>
+const EMPLOYEES = ["Александр", "Николай", "Татьяна"];
+const CURRENCY = "₾";
+const MAX_SELECT = EMPLOYEES.length; // можно выбрать всех бартендеров из списка сразу (сейчас их трое)
+
+/* ---------- отправка отчётов в Telegram через Cloudflare Worker-релей ---------- */
+// URL Worker'а появится после деплоя (см. инструкцию) — вставь сюда вместо заглушки.
+const RELAY_URL = "https://rambling-relay.avikulov91.workers.dev/";
+// Необязательный общий "пароль" запроса — просто фильтр от случайных чужих запросов
+// к публичному URL Worker'а, не настоящая защита токена (токен бота нигде в этом файле не хранится).
+// Совпадает со значением APP_SECRET, которое задаётся в настройках Worker'а в Cloudflare.
+const RELAY_APP_SECRET = "";
+
+async function sendReportToTelegram(text){
+  const statusEl = document.getElementById("send-status");
+  if (!statusEl) return;
+  statusEl.style.display = "block";
+  statusEl.classList.remove("status-ok", "status-error");
+  statusEl.textContent = "⏳ Отправка в чат Rambling…";
+  try {
+    const resp = await fetch(RELAY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-App-Secret": RELAY_APP_SECRET },
+      body: JSON.stringify({ text }),
+    });
+    let data = {};
+    try { data = await resp.json(); } catch (e) {}
+    if (resp.ok && data.ok){
+      statusEl.classList.add("status-ok");
+      statusEl.textContent = "✅ Отправлено в чат Rambling";
+    } else {
+      statusEl.classList.add("status-error");
+      statusEl.textContent = "❌ Не удалось отправить (" + (data.error || resp.status) + "). Сообщение ниже можно скопировать вручную.";
+    }
+  } catch (e) {
+    statusEl.classList.add("status-error");
+    statusEl.textContent = "❌ Нет соединения — сообщение не отправлено. Скопируй текст ниже вручную.";
+  }
+}
+
+function pad(n){ return n.toString().padStart(2,"0"); }
+function nowTimeStr(){ const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function formatDateRu(){
+  const d = new Date();
+  const months = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+function num(v){ const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function fmt(n){
+  const rounded = Math.round(n * 100) / 100;
+  return `${rounded.toLocaleString("ru-RU")} ${CURRENCY}`;
+}
+
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+/* ---------- калькулятор подсчёта наличных по купюрам/монетам ---------- */
+const CASH_DENOMINATIONS = [200, 100, 50, 20, 10, 5, 2, 1, 0.5, 0.2, 0.1];
+function setupCashCalculator({ fieldId, toggleId, panelId, gridId, totalId, applyId, onApply }){
+  const toggle = document.getElementById(toggleId);
+  const panel = document.getElementById(panelId);
+  const grid = document.getElementById(gridId);
+  const totalEl = document.getElementById(totalId);
+  const applyBtn = document.getElementById(applyId);
+  const counts = {};
+
+  CASH_DENOMINATIONS.forEach(d => {
+    counts[d] = "";
+    const row = document.createElement("div");
+    row.className = "calc-row";
+    row.innerHTML = `<span class="calc-row-label">${d} ₾</span><input type="number" inputmode="numeric" min="0" placeholder="0">`;
+    row.querySelector("input").addEventListener("input", e => {
+      counts[d] = e.target.value;
+      updateTotal();
+    });
+    grid.appendChild(row);
+  });
+
+  function calcTotal(){
+    return CASH_DENOMINATIONS.reduce((sum, d) => sum + d * (num(counts[d])), 0);
+  }
+  function updateTotal(){
+    totalEl.textContent = fmt(calcTotal());
+  }
+
+  toggle.addEventListener("click", () => {
+    const isOpen = panel.style.display !== "none";
+    panel.style.display = isOpen ? "none" : "block";
+    toggle.textContent = isOpen ? "🧮 Посчитать по купюрам" : "🧮 Скрыть калькулятор";
+  });
+
+  applyBtn.addEventListener("click", () => {
+    document.getElementById(fieldId).value = Math.round(calcTotal() * 100) / 100;
+    if (onApply) onApply();
+  });
+}
+
+/* ---------- employee chips (shared logic, separate state per screen) ---------- */
+function renderChips(containerId, selectedSet, onChange){
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
+  EMPLOYEES.forEach(name => {
+    const chip = document.createElement("button");
+    chip.className = "chip" + (selectedSet.has(name) ? " selected" : "");
+    chip.textContent = name;
+    chip.addEventListener("click", () => {
+      if (selectedSet.has(name)){
+        selectedSet.delete(name);
+      } else {
+        if (selectedSet.size >= MAX_SELECT) return;
+        selectedSet.add(name);
+      }
+      renderChips(containerId, selectedSet, onChange);
+      onChange();
+    });
+    container.appendChild(chip);
+  });
+}
+
+/* ---------- extra (ad-hoc) bartender ---------- */
+function setupExtraToggle(prefix, onChange){
+  const btn = document.getElementById(`${prefix}-toggle-extra`);
+  const wrap = document.getElementById(`${prefix}-extra-wrap`);
+  const input = document.getElementById(`${prefix}-extra-name`);
+  btn.addEventListener("click", () => {
+    const showing = wrap.style.display !== "none";
+    if (showing){
+      wrap.style.display = "none";
+      input.value = "";
+      btn.textContent = "+ Дополнительный бармен";
+    } else {
+      wrap.style.display = "block";
+      btn.textContent = "− Убрать доп. бармена";
+      input.focus();
+    }
+    onChange();
+  });
+  input.addEventListener("input", onChange);
+}
+function getExtraName(prefix){
+  const wrap = document.getElementById(`${prefix}-extra-wrap`);
+  if (wrap.style.display === "none") return "";
+  return document.getElementById(`${prefix}-extra-name`).value.trim();
+}
+function getNames(selectedSet, prefix){
+  const names = Array.from(selectedSet);
+  const extra = getExtraName(prefix);
+  if (extra) names.push(extra);
+  return names;
+}
+
+/* ---------- OPEN SHIFT ---------- */
+let openSelected = new Set();
+
+function openReady(){
+  return getNames(openSelected, "open").length > 0 && num(document.getElementById("open-cash").value) >= 0 && document.getElementById("open-cash").value !== "";
+}
+function refreshOpenHint(){
+  const btn = document.getElementById("open-submit");
+  const hint = document.getElementById("open-hint");
+  const ready = openReady();
+  btn.classList.toggle("ready", ready);
+  hint.textContent = ready ? "Готово к открытию" : "Выберите сотрудника и укажите сумму";
+}
+
+document.getElementById("go-open").addEventListener("click", () => {
+  document.getElementById("open-meta").textContent = formatDateRu() + " · " + nowTimeStr();
+  showScreen("screen-open");
+});
+document.getElementById("back-from-open").addEventListener("click", () => showScreen("screen-menu"));
+renderChips("open-employee-chips", openSelected, refreshOpenHint);
+setupExtraToggle("open", refreshOpenHint);
+document.getElementById("open-cash").addEventListener("input", refreshOpenHint);
+setupCashCalculator({
+  fieldId: "open-cash",
+  toggleId: "open-cash-calc-toggle",
+  panelId: "open-cash-calc-panel",
+  gridId: "open-cash-calc-grid",
+  totalId: "open-cash-calc-total",
+  applyId: "open-cash-calc-apply",
+  onApply: refreshOpenHint,
+});
+
+document.getElementById("open-submit").addEventListener("click", () => {
+  if (!openReady()){
+    const hint = document.getElementById("open-hint");
+    hint.textContent = "Сначала заполни все поля";
+    hint.classList.add("angry");
+    const btn = document.getElementById("open-submit");
+    btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
+    return;
+  }
+  const names = getNames(openSelected, "open").join(", ");
+  const cash = num(document.getElementById("open-cash").value);
+  const text =
+`rambling :
+🟢 Открытие кассы — Rambling
+Кто на смене: ${names}
+Дата: ${formatDateRu()}
+Время: ${nowTimeStr()}
+Касса на начало: ${fmt(cash)}`;
+
+  document.getElementById("done-badge").textContent = "🟢";
+  document.getElementById("done-title").textContent = "Касса открыта";
+  document.getElementById("msg-preview").textContent = text;
+  showScreen("screen-done");
+  sendReportToTelegram(text);
+});
+
+/* ---------- CLOSE SHIFT ---------- */
+let closeSelected = new Set();
+let expenses = []; // { name, amount }
+
+function addExpenseRow(){
+  expenses.push({ name: "", amount: "" });
+  renderExpenses();
+}
+function renderExpenses(){
+  const container = document.getElementById("expense-rows");
+  container.innerHTML = "";
+  expenses.forEach((exp, idx) => {
+    const row = document.createElement("div");
+    row.className = "expense-row";
+    row.innerHTML = `
+      <div class="input-col">
+        <div class="input-col-label">На что потратили</div>
+        <input class="text-input" type="text" placeholder="Лёд, такси и т.п." data-role="exp-name" value="${exp.name}">
+      </div>
+      <div class="input-col amount-col">
+        <div class="input-col-label">Сумма</div>
+        <input class="num-input" type="number" inputmode="decimal" placeholder="0" data-role="exp-amount" value="${exp.amount}">
+      </div>
+      <button class="remove-expense" type="button" data-role="exp-remove">×</button>
+    `;
+    row.querySelector('[data-role="exp-name"]').addEventListener("input", e => { expenses[idx].name = e.target.value; });
+    row.querySelector('[data-role="exp-amount"]').addEventListener("input", e => { expenses[idx].amount = e.target.value; recalcClose(); });
+    row.querySelector('[data-role="exp-remove"]').addEventListener("click", () => { expenses.splice(idx,1); renderExpenses(); recalcClose(); });
+    container.appendChild(row);
+  });
+}
+
+function recalcClose(){
+  const posterCash = num(document.getElementById("poster-cash").value);
+  const posterCard = num(document.getElementById("poster-card").value);
+  const posterTotal = posterCash + posterCard;
+
+  const actualCash = num(document.getElementById("actual-cash").value);
+  const actualCard = num(document.getElementById("actual-card").value);
+  const actualTotal = actualCash + actualCard;
+
+  const diff = actualTotal - posterTotal;
+
+  document.getElementById("poster-total").textContent = fmt(posterTotal);
+  document.getElementById("actual-total").textContent = fmt(actualTotal);
+
+  const diffCard = document.getElementById("diff-card");
+  const diffValue = document.getElementById("diff-value");
+  const okDiff = Math.abs(diff) < 0.01;
+  diffCard.classList.toggle("ok", okDiff);
+  diffCard.classList.toggle("mismatch", !okDiff);
+  diffValue.textContent = (diff > 0 ? "+" : "") + fmt(diff);
+
+  const openingCash = num(document.getElementById("close-opening-cash").value);
+  const salary = num(document.getElementById("salary").value);
+  const cardTips = num(document.getElementById("card-tips").value);
+  const expensesTotal = expenses.reduce((sum, e) => sum + num(e.amount), 0);
+
+  const finalBalance = openingCash + actualCash - salary - cardTips - expensesTotal;
+  document.getElementById("final-balance").textContent = fmt(finalBalance);
+
+  refreshCloseHint();
+}
+
+function closeReady(){
+  const employeesOk = getNames(closeSelected, "close").length > 0;
+  const fieldsOk = ["close-opening-cash","poster-cash","poster-card","actual-cash","actual-card"].every(id => document.getElementById(id).value !== "");
+  return employeesOk && fieldsOk;
+}
+function refreshCloseHint(){
+  const btn = document.getElementById("close-submit");
+  const hint = document.getElementById("close-hint");
+  const ready = closeReady();
+  btn.classList.toggle("ready", ready);
+  hint.textContent = ready ? "Готово к закрытию" : "Заполните все поля";
+}
+
+document.getElementById("go-close").addEventListener("click", () => {
+  document.getElementById("close-meta").textContent = formatDateRu() + " · " + nowTimeStr();
+  showScreen("screen-close");
+});
+document.getElementById("back-from-close").addEventListener("click", () => showScreen("screen-menu"));
+renderChips("close-employee-chips", closeSelected, () => { refreshCloseHint(); });
+setupExtraToggle("close", refreshCloseHint);
+setupCashCalculator({
+  fieldId: "close-opening-cash",
+  toggleId: "close-cash-calc-toggle",
+  panelId: "close-cash-calc-panel",
+  gridId: "close-cash-calc-grid",
+  totalId: "close-cash-calc-total",
+  applyId: "close-cash-calc-apply",
+  onApply: refreshCloseHint,
+});
+["close-opening-cash","poster-cash","poster-card","actual-cash","actual-card","salary","card-tips"].forEach(id => {
+  document.getElementById(id).addEventListener("input", recalcClose);
+});
+document.getElementById("add-expense").addEventListener("click", addExpenseRow);
+recalcClose();
+
+document.getElementById("close-submit").addEventListener("click", () => {
+  if (!closeReady()){
+    const hint = document.getElementById("close-hint");
+    hint.textContent = "Сначала заполни все поля";
+    hint.classList.add("angry");
+    const btn = document.getElementById("close-submit");
+    btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
+    return;
+  }
+  const names = getNames(closeSelected, "close").join(", ");
+  const openingCash = num(document.getElementById("close-opening-cash").value);
+  const posterCash = num(document.getElementById("poster-cash").value);
+  const posterCard = num(document.getElementById("poster-card").value);
+  const posterTotal = posterCash + posterCard;
+  const actualCash = num(document.getElementById("actual-cash").value);
+  const actualCard = num(document.getElementById("actual-card").value);
+  const actualTotal = actualCash + actualCard;
+  const diff = actualTotal - posterTotal;
+  const diffComment = document.getElementById("diff-comment").value.trim();
+  const salary = num(document.getElementById("salary").value);
+  const cardTips = num(document.getElementById("card-tips").value);
+  const expensesTotal = expenses.reduce((sum, e) => sum + num(e.amount), 0);
+  const finalBalance = openingCash + actualCash - salary - cardTips - expensesTotal;
+
+  let text =
+`rambling :
+🔴 Закрытие кассы — Rambling
+Кто работал: ${names}
+Дата: ${formatDateRu()}
+Время: ${nowTimeStr()}
+Касса на начало смены: ${fmt(openingCash)}
+
+📟 Постер: нал. ${fmt(posterCash)} + карта ${fmt(posterCard)} = ${fmt(posterTotal)}
+💵 Факт: нал. ${fmt(actualCash)} + карта ${fmt(actualCard)} = ${fmt(actualTotal)}
+${Math.abs(diff) < 0.01 ? "✅ Разница: 0" : `⚠️ Разница: ${(diff > 0 ? "+" : "") + fmt(diff)}`}`;
+
+  if (diffComment){
+    text += `\n💬 Комментарий: ${diffComment}`;
+  }
+
+  text += `\n\n💸 Траты:
+— Зарплата: ${fmt(salary)}
+— Чаевые (карта→нал.): ${fmt(cardTips)}`;
+
+  expenses.forEach(e => {
+    if (e.name || num(e.amount) > 0){
+      text += `\n— ${e.name || "Без названия"}: ${fmt(num(e.amount))}`;
+    }
+  });
+
+  text += `\n\n💰 Остаток наличных в кассе: ${fmt(finalBalance)}`;
+
+  const notes = document.getElementById("close-notes").value.trim();
+  if (notes){
+    text += `\n\n📝 Заметки: ${notes}`;
+  }
+
+  document.getElementById("done-badge").textContent = Math.abs(diff) < 0.01 ? "🟢" : "🔴";
+  document.getElementById("done-title").textContent = "Касса закрыта";
+  document.getElementById("msg-preview").textContent = text;
+  showScreen("screen-done");
+  sendReportToTelegram(text);
+});
+
+document.getElementById("go-cash-menu").addEventListener("click", () => showScreen("screen-menu"));
+document.getElementById("back-from-menu").addEventListener("click", () => showScreen("screen-root"));
+
+/* ---------- procurement request: per-section day gating ---------- */
+const PROCUREMENT_TEST_MODE = true; // ВРЕМЕННО: true = все разделы открыты в любой день, для теста. Поставь false, чтобы вернуть ограничение по дням.
+const PROCUREMENT_PREVIEW_DAY = null; // ВРЕМЕННО для предпросмотра конкретного дня: 3 = среда, 0 = воскресенье, null = использовать настоящий сегодняшний день
+function currentDow(){
+  return PROCUREMENT_PREVIEW_DAY !== null ? PROCUREMENT_PREVIEW_DAY : new Date().getDay();
+}
+function isWednesday(){
+  if (PROCUREMENT_TEST_MODE) return true;
+  return currentDow() === 3;
+}
+function isSunday(){
+  if (PROCUREMENT_TEST_MODE) return true;
+  return currentDow() === 0;
+}
+function isProcurementDay(){
+  return isWednesday() || isSunday();
+}
+const procurementBtn = document.getElementById("go-procurement");
+const procurementSub = document.getElementById("procurement-sub");
+if (isProcurementDay()){
+  procurementBtn.addEventListener("click", () => showScreen("screen-procurement"));
+} else {
+  procurementBtn.classList.add("disabled");
+  procurementSub.style.display = "block";
+}
+document.getElementById("back-from-procurement").addEventListener("click", () => showScreen("screen-root"));
+
+// Доступность каждого раздела заявки на закупку по дням недели:
+// среда — пиво, фрукты, настойки; воскресенье — зелень, алкоголь, хозтовары.
+// "Нестандартная заявка" доступна всегда, без ограничения по дням.
+const PROCUREMENT_SECTIONS = [
+  { btnId: "go-beer", subId: "beer-day-sub", allowed: isWednesday() },
+  { btnId: "go-fruits", subId: "fruits-day-sub", allowed: isWednesday() },
+  { btnId: "go-infusions", subId: "infusions-day-sub", allowed: isWednesday() },
+  { btnId: "go-herbs", subId: "herbs-day-sub", allowed: isSunday() },
+  { btnId: "go-alcohol", subId: "alcohol-day-sub", allowed: isSunday() },
+  { btnId: "go-household", subId: "household-day-sub", allowed: isSunday() },
+];
+PROCUREMENT_SECTIONS.forEach(({ btnId, subId, allowed }) => {
+  if (!allowed){
+    document.getElementById(btnId).classList.add("disabled");
+    document.getElementById(subId).style.display = "block";
+  }
+});
+
+/* ---------- главный экран: кричащее напоминание о заявках в дни заявок ---------- */
+const PROCUREMENT_LABELS = {
+  "go-beer": "🍺 Пиво",
+  "go-fruits": "🍋 Фрукты",
+  "go-infusions": "🫙 Настойки",
+  "go-herbs": "🌿 Зелень",
+  "go-alcohol": "🥃 Алкоголь",
+  "go-household": "🧽 Хозтовары",
+};
+const DOW_NAMES_RU = ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"];
+const dueSectionLabels = PROCUREMENT_SECTIONS.filter(s => s.allowed).map(s => PROCUREMENT_LABELS[s.btnId]);
+if (dueSectionLabels.length){
+  // В тестовом режиме среда и воскресенье считаются "включёнными" одновременно каждый день,
+  // поэтому называть конкретный день недели нельзя — иначе подпись разойдётся с реальным днём.
+  // Настоящее название дня показываем только когда тестовый режим выключен (или используется предпросмотр конкретного дня).
+  const dayLabel = PROCUREMENT_TEST_MODE
+    ? "Сегодня день заявок"
+    : `Сегодня ${DOW_NAMES_RU[currentDow()]}`;
+  document.getElementById("reminder-banner-title").textContent = `⚠️ ${dayLabel} — нужны заявки!`;
+  document.getElementById("reminder-banner-list").textContent = dueSectionLabels.join("  ·  ");
+  document.getElementById("reminder-banner").style.display = "block";
+}
+
+/* ---------- BEER ORDER ---------- */
+const BEER_DRAFT_ITEMS = [
+  { name: "Лагер", supplier: "Натахтари / Вано" },
+  { name: "Нефильтрованное пшеничное", supplier: "Вано" },
+  { name: "Б/а пиво", supplier: "Белорусские продукты" },
+  { name: "Сидр вишня", supplier: "Дато Батуми Трейдинг" },
+  { name: "Сидр яблоко", supplier: "Дато Батуми Трейдинг" },
+];
+const BEER_EQUIPMENT_ITEMS = [
+  { name: "Баллон (CO₂)", supplier: "Резо" },
+];
+let beerSelected = new Set();
+let beerState = {}; // name -> { checked, qty }
+
+function renderBeerItems(containerId, items){
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
+  items.forEach(item => {
+    const name = item.name;
+    if (!(name in beerState)) beerState[name] = { notneeded: false, qty: "" };
+    const state = beerState[name];
+    const div = document.createElement("div");
+    div.className = "beer-item";
+    div.innerHTML = `
+      <div class="beer-item-name">${name}<span class="beer-item-supplier">Поставщик: ${item.supplier}</span></div>
+      <div class="beer-input-row">
+        <input class="beer-qty-input" type="text" placeholder="Количество / примечание" value="${state.qty}" ${state.notneeded ? "disabled" : ""}>
+        <button type="button" class="beer-toggle-btn${state.notneeded ? " active-notneed" : ""}" data-role="notneed">Не нужно</button>
+      </div>
+    `;
+    div.querySelector('[data-role="notneed"]').addEventListener("click", () => {
+      state.notneeded = !state.notneeded;
+      if (state.notneeded) state.qty = "";
+      renderBeerItems(containerId, items);
+      refreshBeerHint();
+    });
+    const qtyInput = div.querySelector(".beer-qty-input");
+    qtyInput.addEventListener("input", e => { state.qty = e.target.value; refreshBeerHint(); });
+    container.appendChild(div);
+  });
+}
+
+function beerReady(){
+  const allItems = [...BEER_DRAFT_ITEMS, ...BEER_EQUIPMENT_ITEMS];
+  return getNames(beerSelected, "beer").length > 0 &&
+    allItems.every(item => beerState[item.name] && (beerState[item.name].notneeded || beerState[item.name].qty.trim().length > 0)) &&
+    allItems.some(item => !beerState[item.name].notneeded && beerState[item.name].qty.trim().length > 0);
+}
+function refreshBeerHint(){
+  const btn = document.getElementById("beer-submit");
+  const hint = document.getElementById("beer-hint");
+  const ready = beerReady();
+  btn.classList.toggle("ready", ready);
+  hint.textContent = ready ? "Готово к отправке" : "Отметьте по каждой позиции: нужно или не нужно";
+}
+
+document.getElementById("go-beer").addEventListener("click", () => {
+  document.getElementById("beer-meta").textContent = formatDateRu() + " · " + nowTimeStr();
+  renderBeerItems("beer-draft-items", BEER_DRAFT_ITEMS);
+  renderBeerItems("beer-equipment-items", BEER_EQUIPMENT_ITEMS);
+  showScreen("screen-beer");
+});
+document.getElementById("back-from-beer").addEventListener("click", () => showScreen("screen-procurement"));
+renderChips("beer-employee-chips", beerSelected, refreshBeerHint);
+setupExtraToggle("beer", refreshBeerHint);
+
+document.getElementById("beer-submit").addEventListener("click", () => {
+  if (!beerReady()){
+    const hint = document.getElementById("beer-hint");
+    hint.textContent = "Выбери бармена и реши по каждой позиции: нужно или не нужно";
+    hint.classList.add("angry");
+    const btn = document.getElementById("beer-submit");
+    btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
+    return;
+  }
+  const names = getNames(beerSelected, "beer").join(", ");
+  let text = `rambling :\n🍺 Заявка на пиво\nДата: ${formatDateRu()}\nБармен: ${names}\n\n🍻 РАЗЛИВНОЕ`;
+  let anyDraft = false;
+  BEER_DRAFT_ITEMS.forEach(item => {
+    const s = beerState[item.name];
+    if (s && !s.notneeded && s.qty.trim().length > 0){
+      anyDraft = true;
+      text += `\n— ${item.name} (${item.supplier}): ${s.qty}`;
+    }
+  });
+  if (!anyDraft) text += "\n(ничего не нужно)";
+
+  const equipmentNeeded = BEER_EQUIPMENT_ITEMS.filter(item => beerState[item.name] && !beerState[item.name].notneeded && beerState[item.name].qty.trim().length > 0);
+  if (equipmentNeeded.length){
+    text += `\n\n🛢 ГАЗ / ОБОРУДОВАНИЕ`;
+    equipmentNeeded.forEach(item => {
+      const s = beerState[item.name];
+      text += `\n— ${item.name} (${item.supplier})${s.qty ? ": " + s.qty : ""}`;
+    });
+  }
+
+  document.getElementById("done-badge").textContent = "🍺";
+  document.getElementById("done-title").textContent = "Заявка отправлена";
+  document.getElementById("msg-preview").textContent = text;
+  showScreen("screen-done");
+  sendReportToTelegram(text);
+});
+
+/* ---------- HERBS ORDER ---------- */
+const HERB_ITEMS = ["Мята", "Базилик", "Щавель", "Тархун", "Розмарин"];
+let herbsSelected = new Set();
+let herbState = {}; // name -> { notneeded, qty }
+
+function renderHerbItems(){
+  const container = document.getElementById("herbs-items");
+  container.innerHTML = "";
+  HERB_ITEMS.forEach(name => {
+    if (!(name in herbState)) herbState[name] = { notneeded: false, qty: "" };
+    const state = herbState[name];
+    const div = document.createElement("div");
+    div.className = "beer-item";
+    div.innerHTML = `
+      <div class="beer-item-name">${name}</div>
+      <div class="beer-input-row">
+        <input class="num-input" type="number" inputmode="numeric" placeholder="0" style="flex:0 0 90px;" value="${state.qty}" ${state.notneeded ? "disabled" : ""}>
+        <div style="align-self:center; color:var(--text-dim); font-size:14px; flex:0 0 auto;">гр.</div>
+        <button type="button" class="beer-toggle-btn${state.notneeded ? " active-notneed" : ""}" data-role="notneed" style="margin-left:auto;">Не нужно</button>
+      </div>
+    `;
+    div.querySelector('[data-role="notneed"]').addEventListener("click", () => {
+      state.notneeded = !state.notneeded;
+      if (state.notneeded) state.qty = "";
+      renderHerbItems();
+      refreshHerbsHint();
+    });
+    div.querySelector(".num-input").addEventListener("input", e => { state.qty = e.target.value; refreshHerbsHint(); });
+    container.appendChild(div);
+  });
+}
+
+function herbsReady(){
+  return getNames(herbsSelected, "herbs").length > 0 &&
+    HERB_ITEMS.every(name => herbState[name] && (herbState[name].notneeded || herbState[name].qty.trim().length > 0)) &&
+    HERB_ITEMS.some(name => !herbState[name].notneeded && herbState[name].qty.trim().length > 0);
+}
+function refreshHerbsHint(){
+  const btn = document.getElementById("herbs-submit");
+  const hint = document.getElementById("herbs-hint");
+  const ready = herbsReady();
+  btn.classList.toggle("ready", ready);
+  hint.textContent = ready ? "Готово к отправке" : "Отметьте по каждой позиции: нужно или не нужно";
+}
+
+document.getElementById("go-herbs").addEventListener("click", () => {
+  document.getElementById("herbs-meta").textContent = formatDateRu() + " · " + nowTimeStr();
+  renderHerbItems();
+  showScreen("screen-herbs");
+});
+document.getElementById("back-from-herbs").addEventListener("click", () => showScreen("screen-procurement"));
+renderChips("herbs-employee-chips", herbsSelected, refreshHerbsHint);
+setupExtraToggle("herbs", refreshHerbsHint);
+
+document.getElementById("herbs-submit").addEventListener("click", () => {
+  if (!herbsReady()){
+    const hint = document.getElementById("herbs-hint");
+    hint.textContent = "Выбери бармена и реши по каждой позиции: нужно или не нужно";
+    hint.classList.add("angry");
+    const btn = document.getElementById("herbs-submit");
+    btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
+    return;
+  }
+  const names = getNames(herbsSelected, "herbs").join(", ");
+  let text = `rambling :\n🌿 Заявка на зелень\nДата: ${formatDateRu()}\nБармен: ${names}\n\n🌱 ЗЕЛЕНЬ — Оранжерея (Рынок)`;
+  let any = false;
+  HERB_ITEMS.forEach(name => {
+    const s = herbState[name];
+    if (s && !s.notneeded && s.qty.trim().length > 0){
+      any = true;
+      text += `\n— ${name}: ${s.qty} гр.`;
+    }
+  });
+  if (!any) text += "\n(ничего не нужно)";
+
+  const comment = document.getElementById("herbs-comment").value.trim();
+  if (comment){
+    text += `\n\n💬 Комментарий: ${comment}`;
+  }
+
+  document.getElementById("done-badge").textContent = "🌿";
+  document.getElementById("done-title").textContent = "Заявка отправлена";
+  document.getElementById("msg-preview").textContent = text;
+  showScreen("screen-done");
+  sendReportToTelegram(text);
+});
+
+/* ---------- ALCOHOL ORDER ---------- */
+const ALCOHOL_CATEGORIES = [
+  { title: "🥃 БУРБОН", items: [
+    { name: "Jack Daniels", supplier: "Андрей" },
+    { name: "Four Roses", supplier: "Андрей" },
+    { name: "Jim Beam", supplier: "Андрей" },
+    { name: "Buffalo Trace", supplier: "Андрей" },
+    { name: "Bulleit Rye", supplier: "Андрей" },
+  ]},
+  { title: "🍸 ВЕРМУТ / АПЕРИТИВЫ", items: [
+    { name: "Lillet", supplier: "Андрей" },
+    { name: "Carpano Dry", supplier: "Black Sea" },
+    { name: "Campari", supplier: "Андрей" },
+    { name: "Carpano Bianco", supplier: "Black Sea" },
+    { name: "Carpano Rosso", supplier: "Black Sea" },
+    { name: "Suze", supplier: "Neca" },
+    { name: "Aperol", supplier: "Андрей" },
+    { name: "Martini Bianco", supplier: "Андрей" },
+    { name: "Martini Rosso", supplier: "Андрей" },
+  ]},
+  { title: "🍷 ВИНО", items: [
+    { name: "Красное", supplier: "Дато Батуми Трейдинг" },
+    { name: "Белое", supplier: "Дато Батуми Трейдинг" },
+    { name: "Игристое", supplier: "Black Sea / Дато Батуми Трейдинг / Андрей" },
+    { name: "Красное вино (КТВ)", supplier: "" },
+  ]},
+  { title: "🥃 ВОДКА", items: [
+    { name: "Finlandia Black Currant", supplier: "Андрей" },
+    { name: "Koskenkorva", supplier: "Магазин спирт" },
+    { name: "Хортица", supplier: "Дато Батуми Трейдинг" },
+  ]},
+  { title: "🥃 ДЖИН", items: [
+    { name: "Monkey 47", supplier: "Алкомаркет" },
+    { name: "Larios хаус", supplier: "Андрей" },
+  ]},
+  { title: "🥃 ВИСКИ / СКОТЧ / ИРЛАНДСКИЙ", items: [
+    { name: "J&B", supplier: "Андрей" },
+    { name: "Old Dumberbeck", supplier: "Black Sea" },
+    { name: "Laphroaig Oak Select", supplier: "Андрей" },
+    { name: "Jameson", supplier: "Андрей" },
+  ]},
+  { title: "🥃 РОМ", items: [
+    { name: "Sailor Jerry", supplier: "Андрей" },
+    { name: "Stroh 80", supplier: "Андрей" },
+    { name: "Carta Vieja Extra Claro (белый)", supplier: "Black Sea" },
+    { name: "Carta Vieja (тёмный)", supplier: "Black Sea" },
+  ]},
+  { title: "🥃 ТЕКИЛА / МЕСКАЛЬ", items: [
+    { name: "Tequila Mundo", supplier: "Black Sea" },
+    { name: "Espiritu", supplier: "Black Sea" },
+    { name: "Tequila хаус", supplier: "Андрей" },
+    { name: "Mezcal", supplier: "Neca" },
+  ]},
+  { title: "🍸 ЛИКЁРЫ", items: [
+    { name: "Fernet Branca", supplier: "Алкомаркет" },
+    { name: "Branca Menta", supplier: "Алкомаркет" },
+    { name: "Fireball", supplier: "Андрей" },
+    { name: "Violet", supplier: "Феликс" },
+    { name: "Fruko Apple", supplier: "Alcofox" },
+    { name: "Fruko Lychee", supplier: "Alcofox" },
+    { name: "Shankys Whip", supplier: "Black Sea" },
+    { name: "Bols Cacao White", supplier: "Black Sea" },
+    { name: "Monin Triple Sec", supplier: "Андрей" },
+    { name: "Maraschino", supplier: "Гастроном" },
+    { name: "Kahlua", supplier: "Андрей" },
+    { name: "Disaronno", supplier: "Андрей" },
+    { name: "Cassis", supplier: "Гастроном" },
+    { name: "Ликёр Бузина", supplier: "Сами" },
+    { name: "Ликёр Мятный", supplier: "Сами" },
+    { name: "Ликёр Личи", supplier: "Сами" },
+  ]},
+  { title: "🍷 ПОРТ / ПРОЧЕЕ", items: [
+    { name: "Pedro Ximenez", supplier: "Андрей" },
+    { name: "Fino", supplier: "Андрей" },
+    { name: "Valdouro Ruby", supplier: "Alcofox" },
+    { name: "Valdouro White", supplier: "Alcofox" },
+    { name: "Brandy", supplier: "Octopus" },
+    { name: "Papidoux", supplier: "Андрей" },
+    { name: "Абсент", supplier: "Алкобренд" },
+    { name: "Jagermeister", supplier: "Андрей" },
+    { name: "Кашаса", supplier: "Neca" },
+    { name: "Року джин", supplier: "Андрей" },
+  ]},
+  { title: "🥃 ЧАЧА", items: [
+    { name: "Чача Хаус", supplier: "Алкомаркет" },
+    { name: "Чача копчёная Хаус", supplier: "Алкомаркет" },
+  ]},
+  { title: "🥤 НАПИТКИ", items: [
+    { name: "Кола (ящ)", supplier: "Оптовый" },
+    { name: "Швепс (ящ)", supplier: "Оптовый" },
+    { name: "Сок яблочный (шт)", supplier: "Дато Батуми Трейдинг" },
+    { name: "Сок ананас (шт)", supplier: "Дато Батуми Трейдинг" },
+    { name: "Сок томат (шт)", supplier: "Армяне" },
+    { name: "Сок апельсин (шт)", supplier: "Дато Батуми Трейдинг" },
+  ]},
+  { title: "🧊 ПРОЧЕЕ", items: [
+    { name: "Сливки", supplier: "Белорусские продукты" },
+  ]},
+  { title: "🍊 ПЮРЕ (АГРОБАР)", items: [
+    { name: "Маракуйя", supplier: "Агробар" },
+  ]},
+  { title: "🍯 СИРОПЫ RICHESA", items: [
+    { name: "Клён", supplier: "Richesa" },
+    { name: "Мёд", supplier: "Richesa" },
+    { name: "Груша", supplier: "Richesa" },
+    { name: "Кокос", supplier: "Richesa" },
+    { name: "Малина", supplier: "Richesa" },
+    { name: "Гренадин", supplier: "Richesa" },
+    { name: "Бузина", supplier: "Richesa" },
+    { name: "Миндаль", supplier: "Richesa" },
+    { name: "Ваниль", supplier: "Richesa" },
+    { name: "Гуава", supplier: "Richesa" },
+    { name: "Вишня", supplier: "Richesa" },
+    { name: "Гербариста Тайга", supplier: "Richesa" },
+    { name: "Личи", supplier: "Richesa" },
+    { name: "Сироп агава", supplier: "Агрохаб" },
+    { name: "Сироп каркаде", supplier: "Своё производство" },
+  ]},
+  { title: "🍊 ПЮРЕ RICHESA", items: [
+    { name: "Персик", supplier: "Richesa" },
+    { name: "Банан", supplier: "Richesa" },
+    { name: "Юдзу", supplier: "Richesa" },
+    { name: "Клюква", supplier: "Richesa" },
+  ]},
+  { title: "🍹 КОРДИАЛЫ", items: [
+    { name: "Алоэ", supplier: "" },
+    { name: "Базилик", supplier: "" },
+    { name: "Лайм", supplier: "" },
+  ]},
+  { title: "🍹 БИТТЕРЫ (Neca)", items: [
+    { name: "Ангостура", supplier: "Neca" },
+    { name: "Пишо", supplier: "Neca" },
+    { name: "Огурец", supplier: "Neca" },
+    { name: "Апельсин", supplier: "Neca" },
+  ]},
+];
+
+let alcoholSelected = new Set();
+let alcoholState = {}; // name -> { notneeded, qty }
+
+function renderAlcoholSections(){
+  const container = document.getElementById("alcohol-sections");
+  container.innerHTML = "";
+  ALCOHOL_CATEGORIES.forEach(cat => {
+    const hr = document.createElement("hr");
+    hr.className = "section-divider";
+    container.appendChild(hr);
+
+    const heading = document.createElement("div");
+    heading.className = "section-title";
+    heading.textContent = cat.title;
+    container.appendChild(heading);
+
+    cat.items.forEach(item => {
+      const name = item.name;
+      if (!(name in alcoholState)) alcoholState[name] = { notneeded: false, qty: "" };
+      const state = alcoholState[name];
+      const div = document.createElement("div");
+      div.className = "beer-item";
+      div.innerHTML = `
+        <div class="beer-item-name">${name}${item.supplier ? `<span class="beer-item-supplier">Поставщик: ${item.supplier}</span>` : ""}</div>
+        <div class="beer-input-row">
+          <input class="beer-qty-input" type="text" placeholder="Количество" value="${state.qty}" ${state.notneeded ? "disabled" : ""}>
+          <button type="button" class="beer-toggle-btn${state.notneeded ? " active-notneed" : ""}" data-role="notneed">Не нужно</button>
+        </div>
+      `;
+      div.querySelector('[data-role="notneed"]').addEventListener("click", () => {
+        state.notneeded = !state.notneeded;
+        if (state.notneeded) state.qty = "";
+        renderAlcoholSections();
+        refreshAlcoholHint();
+      });
+      div.querySelector(".beer-qty-input").addEventListener("input", e => { state.qty = e.target.value; refreshAlcoholHint(); });
+      container.appendChild(div);
+    });
+  });
+}
+
+function alcoholReady(){
+  return getNames(alcoholSelected, "alcohol").length > 0 &&
+    ALCOHOL_CATEGORIES.some(cat => cat.items.some(item => {
+      const s = alcoholState[item.name];
+      return s && !s.notneeded && s.qty.trim().length > 0;
+    }));
+}
+function refreshAlcoholHint(){
+  const btn = document.getElementById("alcohol-submit");
+  const hint = document.getElementById("alcohol-hint");
+  const ready = alcoholReady();
+  btn.classList.toggle("ready", ready);
+  hint.textContent = ready ? "Готово к отправке" : "Заполните количество там, где нужно заказать";
+}
+
+document.getElementById("go-alcohol").addEventListener("click", () => {
+  document.getElementById("alcohol-meta").textContent = formatDateRu() + " · " + nowTimeStr();
+  renderAlcoholSections();
+  showScreen("screen-alcohol");
+});
+document.getElementById("back-from-alcohol").addEventListener("click", () => showScreen("screen-procurement"));
+renderChips("alcohol-employee-chips", alcoholSelected, refreshAlcoholHint);
+setupExtraToggle("alcohol", refreshAlcoholHint);
+
+document.getElementById("alcohol-submit").addEventListener("click", () => {
+  if (!alcoholReady()){
+    const hint = document.getElementById("alcohol-hint");
+    hint.textContent = "Выбери бармена и заполни хотя бы одну позицию";
+    hint.classList.add("angry");
+    const btn = document.getElementById("alcohol-submit");
+    btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
+    return;
+  }
+  const names = getNames(alcoholSelected, "alcohol").join(", ");
+  let text = `rambling :\n📦 Заявка на закупку — Алкоголь\nДата: ${formatDateRu()}\nБармен: ${names}`;
+
+  ALCOHOL_CATEGORIES.forEach(cat => {
+    const lines = [];
+    cat.items.forEach(item => {
+      const s = alcoholState[item.name];
+      if (s && !s.notneeded && s.qty.trim().length > 0){
+        lines.push(`— ${item.name}${item.supplier ? " (" + item.supplier + ")" : ""}: ${s.qty}`);
+      }
+    });
+    if (lines.length){
+      text += `\n\n${cat.title}\n` + lines.join("\n");
+    }
+  });
+
+  document.getElementById("done-badge").textContent = "🥃";
+  document.getElementById("done-title").textContent = "Заявка отправлена";
+  document.getElementById("msg-preview").textContent = text;
+  showScreen("screen-done");
+  sendReportToTelegram(text);
+});
+
+/* ---------- HOUSEHOLD SUPPLIES ORDER ---------- */
+const HOUSEHOLD_SUPPLIER = "Хозяйственный магазин / рынок";
+const HOUSEHOLD_CATEGORIES = [
+  { title: "🧻 РАСХОДНИКИ", items: ["Туалетная бумага", "Салфетки Z-сложение", "Салфетки (бар)", "Салфетки рулон (кухня)", "Мешки для мусора"].map(name => ({ name, supplier: HOUSEHOLD_SUPPLIER })) },
+  { title: "🧴 МОЮЩИЕ СРЕДСТВА", items: ["Мыло для рук", "Средство для посуды", "Domestos", "Средство для окон"].map(name => ({ name, supplier: HOUSEHOLD_SUPPLIER })) },
+  { title: "🧼 УБОРКА", items: ["Губки", "Тряпки для протирания"].map(name => ({ name, supplier: HOUSEHOLD_SUPPLIER })) },
+  { title: "🌿 ПРОЧЕЕ", items: ["Освежитель воздуха", "Палки-вонючки", "Свечи"].map(name => ({ name, supplier: HOUSEHOLD_SUPPLIER })) },
+];
+let householdSelected = new Set();
+let householdState = {}; // name -> { notneeded, qty }
+
+function renderHouseholdSections(){
+  const container = document.getElementById("household-sections");
+  container.innerHTML = "";
+  HOUSEHOLD_CATEGORIES.forEach(cat => {
+    const hr = document.createElement("hr");
+    hr.className = "section-divider";
+    container.appendChild(hr);
+
+    const heading = document.createElement("div");
+    heading.className = "section-title";
+    heading.textContent = cat.title;
+    container.appendChild(heading);
+
+    cat.items.forEach(item => {
+      const name = item.name;
+      if (!(name in householdState)) householdState[name] = { notneeded: false, qty: "" };
+      const state = householdState[name];
+      const div = document.createElement("div");
+      div.className = "beer-item";
+      div.innerHTML = `
+        <div class="beer-item-name">${name}${item.supplier ? `<span class="beer-item-supplier">Поставщик: ${item.supplier}</span>` : ""}</div>
+        <div class="beer-input-row">
+          <input class="beer-qty-input" type="text" placeholder="Количество" value="${state.qty}" ${state.notneeded ? "disabled" : ""}>
+          <button type="button" class="beer-toggle-btn${state.notneeded ? " active-notneed" : ""}" data-role="notneed">Не нужно</button>
+        </div>
+      `;
+      div.querySelector('[data-role="notneed"]').addEventListener("click", () => {
+        state.notneeded = !state.notneeded;
+        if (state.notneeded) state.qty = "";
+        renderHouseholdSections();
+        refreshHouseholdHint();
+      });
+      div.querySelector(".beer-qty-input").addEventListener("input", e => { state.qty = e.target.value; refreshHouseholdHint(); });
+      container.appendChild(div);
+    });
+  });
+}
+
+function householdReady(){
+  const allItems = HOUSEHOLD_CATEGORIES.flatMap(cat => cat.items.map(item => item.name));
+  return getNames(householdSelected, "household").length > 0 &&
+    allItems.every(name => householdState[name] && (householdState[name].notneeded || householdState[name].qty.trim().length > 0)) &&
+    allItems.some(name => !householdState[name].notneeded && householdState[name].qty.trim().length > 0);
+}
+function refreshHouseholdHint(){
+  const btn = document.getElementById("household-submit");
+  const hint = document.getElementById("household-hint");
+  const ready = householdReady();
+  btn.classList.toggle("ready", ready);
+  hint.textContent = ready ? "Готово к отправке" : "Отметьте по каждой позиции: нужно или не нужно";
+}
+
+document.getElementById("go-household").addEventListener("click", () => {
+  document.getElementById("household-meta").textContent = formatDateRu() + " · " + nowTimeStr();
+  renderHouseholdSections();
+  showScreen("screen-household");
+});
+document.getElementById("back-from-household").addEventListener("click", () => showScreen("screen-procurement"));
+renderChips("household-employee-chips", householdSelected, refreshHouseholdHint);
+setupExtraToggle("household", refreshHouseholdHint);
+
+document.getElementById("household-submit").addEventListener("click", () => {
+  if (!householdReady()){
+    const hint = document.getElementById("household-hint");
+    hint.textContent = "Выбери бармена и реши по каждой позиции: нужно или не нужно";
+    hint.classList.add("angry");
+    const btn = document.getElementById("household-submit");
+    btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
+    return;
+  }
+  const names = getNames(householdSelected, "household").join(", ");
+  let text = `rambling :\n🧽 Заявка на хозтовары\nДата: ${formatDateRu()}\nБармен: ${names}\nПоставщик: ${HOUSEHOLD_SUPPLIER}`;
+
+  HOUSEHOLD_CATEGORIES.forEach(cat => {
+    const lines = [];
+    cat.items.forEach(item => {
+      const name = item.name;
+      const s = householdState[name];
+      if (s && !s.notneeded && s.qty.trim().length > 0){
+        lines.push(`— ${name}: ${s.qty}`);
+      }
+    });
+    if (lines.length){
+      text += `\n\n${cat.title}\n` + lines.join("\n");
+    }
+  });
+
+  const comment = document.getElementById("household-comment").value.trim();
+  if (comment){
+    text += `\n\n💬 Комментарий: ${comment}`;
+  }
+
+  document.getElementById("done-badge").textContent = "🧽";
+  document.getElementById("done-title").textContent = "Заявка отправлена";
+  document.getElementById("msg-preview").textContent = text;
+  showScreen("screen-done");
+  sendReportToTelegram(text);
+});
+
+/* ---------- FRUITS ORDER ---------- */
+const FRUIT_ITEMS = [
+  { name: "Лимоны", supplier: "Гиоргий (рынок)" },
+  { name: "Лаймы", supplier: "Гиоргий (рынок)" },
+  { name: "Апельсины", supplier: "Гиоргий (рынок)" },
+  { name: "Огурец", supplier: "Гиоргий (рынок)" },
+  { name: "Яблоки", supplier: "Гиоргий (рынок)" },
+];
+let fruitsSelected = new Set();
+let fruitState = {}; // name -> { notneeded, qty }
+
+function renderFruitItems(){
+  const container = document.getElementById("fruits-items");
+  container.innerHTML = "";
+  FRUIT_ITEMS.forEach(item => {
+    const name = item.name;
+    if (!(name in fruitState)) fruitState[name] = { notneeded: false, qty: "" };
+    const state = fruitState[name];
+    const div = document.createElement("div");
+    div.className = "beer-item";
+    div.innerHTML = `
+      <div class="beer-item-name">${name}<span class="beer-item-supplier">Поставщик: ${item.supplier}</span></div>
+      <div class="beer-input-row">
+        <input class="beer-qty-input" type="text" placeholder="Например: 2 кг" value="${state.qty}" ${state.notneeded ? "disabled" : ""}>
+        <button type="button" class="beer-toggle-btn${state.notneeded ? " active-notneed" : ""}" data-role="notneed">Не нужно</button>
+      </div>
+    `;
+    div.querySelector('[data-role="notneed"]').addEventListener("click", () => {
+      state.notneeded = !state.notneeded;
+      if (state.notneeded) state.qty = "";
+      renderFruitItems();
+      refreshFruitsHint();
+    });
+    div.querySelector(".beer-qty-input").addEventListener("input", e => { state.qty = e.target.value; refreshFruitsHint(); });
+    container.appendChild(div);
+  });
+}
+
+function fruitsReady(){
+  return getNames(fruitsSelected, "fruits").length > 0 &&
+    FRUIT_ITEMS.every(item => fruitState[item.name] && (fruitState[item.name].notneeded || fruitState[item.name].qty.trim().length > 0)) &&
+    FRUIT_ITEMS.some(item => !fruitState[item.name].notneeded && fruitState[item.name].qty.trim().length > 0);
+}
+function refreshFruitsHint(){
+  const btn = document.getElementById("fruits-submit");
+  const hint = document.getElementById("fruits-hint");
+  const ready = fruitsReady();
+  btn.classList.toggle("ready", ready);
+  hint.textContent = ready ? "Готово к отправке" : "Отметьте по каждой позиции: нужно или не нужно";
+}
+
+document.getElementById("go-fruits").addEventListener("click", () => {
+  document.getElementById("fruits-meta").textContent = formatDateRu() + " · " + nowTimeStr();
+  renderFruitItems();
+  showScreen("screen-fruits");
+});
+document.getElementById("back-from-fruits").addEventListener("click", () => showScreen("screen-procurement"));
+renderChips("fruits-employee-chips", fruitsSelected, refreshFruitsHint);
+setupExtraToggle("fruits", refreshFruitsHint);
+
+document.getElementById("fruits-submit").addEventListener("click", () => {
+  if (!fruitsReady()){
+    const hint = document.getElementById("fruits-hint");
+    hint.textContent = "Выбери бармена и реши по каждой позиции: нужно или не нужно";
+    hint.classList.add("angry");
+    const btn = document.getElementById("fruits-submit");
+    btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
+    return;
+  }
+  const names = getNames(fruitsSelected, "fruits").join(", ");
+  let text = `rambling :\n🍋 Заявка на фрукты\nДата: ${formatDateRu()}\nБармен: ${names}\n\n🍊 ФРУКТЫ`;
+  let any = false;
+  FRUIT_ITEMS.forEach(item => {
+    const s = fruitState[item.name];
+    if (s && !s.notneeded && s.qty.trim().length > 0){
+      any = true;
+      text += `\n— ${item.name} (${item.supplier}): ${s.qty}`;
+    }
+  });
+  if (!any) text += "\n(ничего не нужно)";
+
+  document.getElementById("done-badge").textContent = "🍋";
+  document.getElementById("done-title").textContent = "Заявка отправлена";
+  document.getElementById("msg-preview").textContent = text;
+  showScreen("screen-done");
+  sendReportToTelegram(text);
+});
+
+/* ---------- CUSTOM (FREE-FORM) ORDER ---------- */
+let customSelected = new Set();
+
+function customReady(){
+  return getNames(customSelected, "custom").length > 0 &&
+    document.getElementById("custom-text").value.trim().length > 0;
+}
+function refreshCustomHint(){
+  const btn = document.getElementById("custom-submit");
+  const hint = document.getElementById("custom-hint");
+  const ready = customReady();
+  btn.classList.toggle("ready", ready);
+  hint.textContent = ready ? "Готово к отправке" : "Выбери бармена и опиши, что нужно";
+}
+
+document.getElementById("go-custom").addEventListener("click", () => {
+  document.getElementById("custom-meta").textContent = formatDateRu() + " · " + nowTimeStr();
+  showScreen("screen-custom");
+});
+document.getElementById("back-from-custom").addEventListener("click", () => showScreen("screen-procurement"));
+renderChips("custom-employee-chips", customSelected, refreshCustomHint);
+setupExtraToggle("custom", refreshCustomHint);
+document.getElementById("custom-text").addEventListener("input", refreshCustomHint);
+
+document.getElementById("custom-submit").addEventListener("click", () => {
+  if (!customReady()){
+    const hint = document.getElementById("custom-hint");
+    hint.textContent = "Выбери бармена и опиши, что нужно";
+    hint.classList.add("angry");
+    const btn = document.getElementById("custom-submit");
+    btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
+    return;
+  }
+  const names = getNames(customSelected, "custom").join(", ");
+  const body = document.getElementById("custom-text").value.trim();
+  const text = `rambling :\n📝 Нестандартная заявка\nДата: ${formatDateRu()}\nБармен: ${names}\n\n${body}`;
+
+  document.getElementById("done-badge").textContent = "📝";
+  document.getElementById("done-title").textContent = "Заявка отправлена";
+  document.getElementById("msg-preview").textContent = text;
+  showScreen("screen-done");
+  sendReportToTelegram(text);
+});
+
+/* ---------- INFUSIONS (НАСТОЙКИ) ORDER ---------- */
+// Рецепты разобраны из техничек Алексея. Количества ингредиентов — на ОДИН ЛИТР
+// (один стандартный замес) настойки. Часть карточек содержала неточности/пропуски —
+// такие рецепты помечены полем `assumption` (не показывается бармену, только для Алексея).
+const INFUSION_RECIPES = [
+  { name: "Черешня мята", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Черешня", qty: 500, unit: "гр" },
+    { name: "Мята", qty: 20, unit: "гр" },
+    { name: "РЛК", qty: 100, unit: "мл" },
+    { name: "Сахарный сироп", qty: 100, unit: "мл" },
+    { name: "Гвоздика", qty: 5, unit: "шт" },
+  ], assumption: "Мята в карточке указана диапазоном «15-20 гр» — взято верхнее значение (20 гр)." },
+  { name: "Каркаде мята", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Каркаде", qty: 30, unit: "гр" },
+    { name: "Мята", qty: 80, unit: "гр" },
+    { name: "РЛК", qty: 50, unit: "мл" },
+    { name: "Сахарный сироп", qty: 200, unit: "мл" },
+  ]},
+  { name: "Клубника пало санто", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Клубника", qty: 500, unit: "гр" },
+    { name: "Пало санто", qty: 10, unit: "гр" },
+    { name: "РЛК", qty: 100, unit: "мл" },
+    { name: "Сахарный сироп", qty: 100, unit: "мл" },
+  ], assumption: "Пало санто в карточке указано «на глаз» — принято 10 гр." },
+  { name: "Кровавая Мэри", ingredients: [
+    { name: "Сахарный сироп", qty: 100, unit: "мл" },
+    { name: "РЛК", qty: 150, unit: "мл" },
+    { name: "Тобаско", qty: 12, unit: "дэш" },
+    { name: "Ворчестер", qty: 15, unit: "мл" },
+    { name: "Водка 45%", qty: 1000, unit: "мл" },
+  ], assumption: "Рецепт многоэтапный (10-литровые замесы, 3 части томатной массы) и не масштабируется линейно как остальные — учтён только базовый список ингредиентов из карточки, остальное (томаты, специи для варки) в закупку не включено. Рекомендую свериться вручную." },
+  { name: "Коровка", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Конфеты «Коровка»", qty: 500, unit: "гр" },
+  ]},
+  { name: "Персик", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Персик", qty: 500, unit: "гр" },
+    { name: "Корица", qty: 1, unit: "щепотка" },
+    { name: "Кардамон", qty: 3, unit: "шт" },
+    { name: "Мускат", qty: 1, unit: "щепотка" },
+    { name: "Сахарный сироп", qty: 100, unit: "мл" },
+    { name: "РЛК", qty: 50, unit: "мл" },
+  ]},
+  { name: "Черная смородина (красная)", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Смородина", qty: 500, unit: "гр" },
+    { name: "Сахарный сироп", qty: 50, unit: "мл" },
+    { name: "РЛК", qty: 150, unit: "мл" },
+  ]},
+  { name: "Голубика", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Голубика", qty: 500, unit: "гр" },
+    { name: "Сахарный сироп", qty: 100, unit: "мл" },
+    { name: "РЛК", qty: 50, unit: "мл" },
+  ], assumption: "В карточке строка «голубика — 500 гр» продублирована дважды (учтена один раз) и полностью отсутствует строка водки — принято 1000 мл 30%." },
+  { name: "Малина", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Малина", qty: 500, unit: "гр" },
+    { name: "Сахарный сироп", qty: 150, unit: "мл" },
+    { name: "РЛК", qty: 50, unit: "мл" },
+  ], assumption: "В карточке не указан объём водки — принято 1000 мл." },
+  { name: "Имбирь", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Имбирь", qty: 150, unit: "гр" },
+    { name: "РЛК", qty: 100, unit: "мл" },
+    { name: "Сахарный сироп", qty: 100, unit: "мл" },
+    { name: "Ванильный сироп", qty: 50, unit: "мл" },
+  ]},
+  { name: "Кизил", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Кизил", qty: 500, unit: "гр" },
+    { name: "Сахарный сироп", qty: 50, unit: "мл" },
+    { name: "РЛК", qty: 100, unit: "мл" },
+  ]},
+  { name: "Кислое яблоко", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Яблоко зеленое", qty: 1000, unit: "гр" },
+    { name: "РЛК", qty: 150, unit: "гр" },
+    { name: "Сахарный сироп", qty: 50, unit: "мл" },
+    { name: "Лимонная кислота в гранулах", qty: 20, unit: "гр" },
+  ], assumption: "В карточке не указан объём и крепость водки — принято 1000 мл 30%." },
+  { name: "Фейхоа", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Фейхоа", qty: 500, unit: "гр" },
+    { name: "РЛК", qty: 50, unit: "мл" },
+    { name: "Сахарный сироп", qty: 150, unit: "мл" },
+  ]},
+  { name: "Кислая красная смородина", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Красная смородина", qty: 500, unit: "гр" },
+    { name: "РЛК", qty: 200, unit: "мл" },
+    { name: "Сахарный сироп", qty: 50, unit: "мл" },
+  ]},
+  { name: "Клубника кокос", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Кокосовая стружка", qty: 25, unit: "гр" },
+    { name: "Клубника", qty: 500, unit: "гр" },
+    { name: "Сахарный сироп", qty: 250, unit: "мл" },
+    { name: "РЛК", qty: 250, unit: "мл" },
+  ]},
+  { name: "Шиповник, гибискус", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Шиповник", qty: 150, unit: "гр" },
+    { name: "Гибискус", qty: 30, unit: "гр" },
+    { name: "Сахарный сироп", qty: 100, unit: "гр" },
+    { name: "РЛК", qty: 200, unit: "гр" },
+  ]},
+  { name: "Черная смородина мята", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Черная смородина", qty: 500, unit: "гр" },
+    { name: "Мята перебранная", qty: 15, unit: "гр" },
+    { name: "Сахарный сироп", qty: 100, unit: "мл" },
+    { name: "РЛК", qty: 150, unit: "мл" },
+  ]},
+  { name: "Имбирь мята лайм", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Мята перебранная", qty: 30, unit: "гр" },
+    { name: "Имбирь", qty: 15, unit: "гр" },
+    { name: "Лайм целый", qty: 1, unit: "шт" },
+    { name: "Сахарный сироп", qty: 100, unit: "гр" },
+    { name: "РЛК", qty: 150, unit: "гр" },
+  ]},
+  { name: "Вишня кардамон корица", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Вишня", qty: 500, unit: "гр" },
+    { name: "Кардамон", qty: 4, unit: "шт" },
+    { name: "Корица", qty: 1, unit: "палочка" },
+    { name: "Гвоздика", qty: 2, unit: "шт" },
+    { name: "Ароматическая жидкость «вишня»", qty: 2, unit: "капля" },
+    { name: "Сахарный сироп", qty: 100, unit: "мл" },
+    { name: "РЛК", qty: 100, unit: "мл" },
+  ]},
+  { name: "Вишня халапеньо", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Вишня", qty: 500, unit: "гр" },
+    { name: "Халапеньо", qty: 2, unit: "шт" },
+    { name: "Сахарный сироп", qty: 200, unit: "мл" },
+    { name: "РЛК", qty: 100, unit: "мл" },
+    { name: "Ароматическая жидкость «вишня»", qty: 2, unit: "капля" },
+  ]},
+  { name: "Смородина кофе", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Смородина", qty: 500, unit: "гр" },
+    { name: "Черный перец", qty: 10, unit: "шт" },
+    { name: "Кофе растворимый", qty: 2, unit: "ст.л." },
+    { name: "Сахарный сироп", qty: 200, unit: "мл" },
+    { name: "РЛК", qty: 100, unit: "мл" },
+  ]},
+  { name: "Эвкалипт мята", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Эвкалипт", qty: 4, unit: "гр" },
+    { name: "Мята", qty: 30, unit: "гр" },
+    { name: "Сахарный сироп", qty: 100, unit: "мл" },
+    { name: "Лимонная кислота", qty: 150, unit: "мл" },
+  ]},
+  { name: "Пряный томат", ingredients: [
+    { name: "Водка 30%", qty: 2000, unit: "мл" },
+    { name: "Томаты бланшированные (банка)", qty: 2650, unit: "гр" },
+    { name: "Сахарный сироп", qty: 300, unit: "мл" },
+    { name: "РЛК", qty: 900, unit: "мл" },
+    { name: "Красный перец", qty: 1, unit: "стручок" },
+    { name: "Черный тмин", qty: 15, unit: "гр" },
+    { name: "Аджика сушеная", qty: 60, unit: "гр" },
+    { name: "Тмин", qty: 15, unit: "гр" },
+    { name: "Кунжут", qty: 15, unit: "гр" },
+    { name: "Кориандр", qty: 5, unit: "шт" },
+    { name: "Копченая паприка", qty: 3, unit: "гр" },
+    { name: "Перец горошком", qty: 9, unit: "гр" },
+    { name: "Кинза свежая", qty: 50, unit: "гр" },
+    { name: "Ворчестерский соус", qty: 150, unit: "мл" },
+    { name: "Шрирача", qty: 50, unit: "мл" },
+    { name: "Соль", qty: 90, unit: "гр" },
+    { name: "Трюфельное масло", qty: 4, unit: "капля" },
+  ], assumption: "Замес в этом рецепте на 2 литра водки (в 2 раза больше базового) — при заказе «1 литр» в закупку всё равно уйдёт полный замес (2 литра водки и т.д.), пропорционально указанному количеству." },
+  { name: "Красная смородина пряная", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Красная смородина", qty: 500, unit: "гр" },
+    { name: "Дягиль", qty: 3, unit: "гр" },
+    { name: "Солодка", qty: 2, unit: "гр" },
+    { name: "Лавровый лист", qty: 1, unit: "шт" },
+    { name: "Черный перец", qty: 5, unit: "шт" },
+    { name: "Сахарный сироп", qty: 150, unit: "мл" },
+    { name: "РЛК", qty: 100, unit: "мл" },
+  ]},
+  { name: "Острая голубика эвкалипт", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Голубика", qty: 500, unit: "гр" },
+    { name: "Халапеньо", qty: 4, unit: "шт" },
+    { name: "Эвкалипт", qty: 6, unit: "лист" },
+    { name: "Сахарный сироп", qty: 150, unit: "мл" },
+    { name: "РЛК", qty: 100, unit: "мл" },
+  ]},
+  { name: "Смородина пряная", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Смородина", qty: 500, unit: "гр" },
+    { name: "Дягиль", qty: 3, unit: "гр" },
+    { name: "Зверобой", qty: 2, unit: "гр" },
+    { name: "Анис", qty: 1, unit: "шт" },
+    { name: "Сахарный сироп", qty: 300, unit: "мл" },
+    { name: "РЛК", qty: 100, unit: "мл" },
+  ]},
+  { name: "Молочная лимончело", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Лимон", qty: 1000, unit: "гр" },
+    { name: "Молоко нежирное", qty: 1000, unit: "мл" },
+    { name: "Арома лимон", qty: 4, unit: "капля" },
+    { name: "Арома миндаль", qty: 4, unit: "капля" },
+    { name: "Арома ваниль", qty: 4, unit: "капля" },
+    { name: "Арома корица", qty: 4, unit: "капля" },
+    { name: "Сахарный песок", qty: 300, unit: "гр" },
+  ]},
+  { name: "Молочная банан", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Банан", qty: 1000, unit: "гр" },
+    { name: "Молоко нежирное", qty: 1000, unit: "мл" },
+    { name: "Арома лимон", qty: 4, unit: "капля" },
+    { name: "Арома миндаль", qty: 4, unit: "капля" },
+    { name: "Арома ваниль", qty: 4, unit: "капля" },
+    { name: "Арома корица", qty: 4, unit: "капля" },
+    { name: "Сахарный песок", qty: 300, unit: "гр" },
+  ]},
+  { name: "Кислая вишня", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Вишня", qty: 500, unit: "гр" },
+    { name: "РЛК", qty: 150, unit: "гр" },
+    { name: "Сахарный сироп", qty: 50, unit: "мл" },
+    { name: "Лимонная кислота в гранулах", qty: 20, unit: "гр" },
+  ], assumption: "Крепость водки в карточке не указана — принято 30%, как в большинстве рецептов." },
+  { name: "Рачки", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Конфеты «Рачки»", qty: 500, unit: "гр" },
+  ]},
+  { name: "Лимончело", ingredients: [
+    { name: "Лимоны (для цедры)", qty: 1000, unit: "гр" },
+    { name: "Сахарный сироп", qty: 450, unit: "мл" },
+    { name: "Лимон фреш (сок)", qty: 450, unit: "мл" },
+    { name: "Водка 42%", qty: 1000, unit: "мл" },
+  ]},
+  { name: "Настойка грейпфрут", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Грейпфрут (для цедры)", qty: 1000, unit: "гр" },
+    { name: "Сахарный сироп", qty: 100, unit: "мл" },
+    { name: "РЛК", qty: 150, unit: "мл" },
+    { name: "Сок грейпфрута", qty: 200, unit: "мл" },
+  ]},
+];
+const INFUSIONS_SORTED = [...INFUSION_RECIPES].sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+
+// Поставщик по каждому сырьевому ингредиенту (не по настойке) — используется, чтобы в
+// итоговом списке закупки сразу было видно, у кого что брать. Ингредиенты без поставщика
+// в списке ниже — уточнить у Алексея.
+const INFUSION_INGREDIENT_SUPPLIERS = {
+  "Аджика сушеная": "Кондитерский",
+  "Анис": "Кондитерский",
+  "Банан": "Гиоргий (рынок)",
+  "Вишня": "Маленький турецкий",
+  "Ворчестер": "Маленький турецкий",
+  "Ворчестерский соус": "Маленький турецкий",
+  "Гвоздика": "Кондитерский",
+  "Гибискус": "Кондитерский",
+  "Голубика": "Маленький турецкий",
+  "Имбирь": "Рынок",
+  "Кардамон": "Кондитерский",
+  "Каркаде": "Рынок",
+  "Кизил": "Рынок",
+  "Кинза свежая": "Оранжерея (Рынок)",
+  "Клубника": "Маленький турецкий",
+  "Кокосовая стружка": "Кондитерский",
+  "Конфеты «Коровка»": "Маленький турецкий",
+  "Конфеты «Рачки»": "Маленький турецкий",
+  "Копченая паприка": "Кондитерский",
+  "Кориандр": "Кондитерский",
+  "Корица": "Кондитерский",
+  "Кофе растворимый": "Маленький турецкий",
+  "Красная смородина": "Маленький турецкий",
+  "Красный перец": "Рынок",
+  "Кунжут": "Кондитерский",
+  "Лавровый лист": "Кондитерский",
+  "Лайм целый": "Гиоргий (рынок)",
+  "Лимон": "Гиоргий (рынок)",
+  "Лимонная кислота": "Ричеза",
+  "Лимонная кислота в гранулах": "Гиоргий (рынок)",
+  "Малина": "Маленький турецкий",
+  "Молоко нежирное": "Белорусские продукты",
+  "Мускат": "Кондитерский",
+  "Мята": "Оранжерея (Рынок)",
+  "Мята перебранная": "Оранжерея (Рынок)",
+  "Пало санто": "Рынок",
+  "Перец горошком": "Кондитерский",
+  "Персик": "Рынок",
+  "РЛК": "Ричеза",
+  "Сахарный песок": "Рынок",
+  "Сахарный сироп": "Рынок",
+  "Смородина": "Маленький турецкий",
+  "Сок грейпфрута": "Рынок",
+  "Соль": "Маленький турецкий",
+  "Тмин": "Кондитерский",
+  "Тобаско": "Маленький турецкий",
+  "Томаты бланшированные (банка)": "Маленький турецкий",
+  "Трюфельное масло": "Маленький турецкий",
+  "Фейхоа": "Рынок",
+  "Халапеньо": "Маленький турецкий",
+  "Черешня": "Маленький турецкий",
+  "Черная смородина": "Маленький турецкий",
+  "Черный перец": "Кондитерский",
+  "Черный тмин": "Кондитерский",
+  "Шиповник": "Рынок",
+  "Шрирача": "Маленький турецкий",
+  "Эвкалипт": "Рынок",
+  "Яблоко зеленое": "Рынок",
+  "Водка 30%": "Магазин спирт",
+  "Водка 42%": "Магазин спирт",
+  "Водка 45%": "Магазин спирт",
+  // Остальное всегда есть в баре и отдельно не заказывается — поставщик намеренно не указан,
+  // такие позиции просто выводятся в списке без пометки: Арома ваниль/корица/лимон/миндаль,
+  // Ароматическая жидкость «вишня», Ванильный сироп, Грейпфрут (для цедры), Дягиль, Зверобой,
+  // Лимон фреш (сок), Лимоны (для цедры), Солодка.
+};
+
+// Порядок позиций в итоговом списке закупки: сначала основа (сами фрукты/продукты),
+// потом водка, потом сахарный сироп и РЛК, потом кислоты и всё не перечисленное явно,
+// и уже в самом конце — приправы/специи и ароматизаторы ("Арома ..."). Кислоты в конец
+// не уходят вместе с приправами — они остаются в общей середине списка.
+const INFUSION_TIER_SYRUP_RLK = new Set(["Сахарный сироп", "РЛК"]);
+const INFUSION_TIER_ACID = new Set(["Лимонная кислота", "Лимонная кислота в гранулах"]);
+const INFUSION_TIER_SPICE = new Set([
+  "Аджика сушеная", "Анис", "Ванильный сироп", "Ворчестер", "Ворчестерский соус",
+  "Гвоздика", "Дягиль", "Зверобой", "Кардамон", "Кинза свежая", "Кокосовая стружка",
+  "Копченая паприка", "Кориандр", "Корица", "Кофе растворимый", "Кунжут",
+  "Лавровый лист", "Лайм целый", "Мускат", "Мята", "Мята перебранная", "Пало санто",
+  "Перец горошком", "Солодка", "Соль", "Тмин", "Тобаско", "Трюфельное масло",
+  "Халапеньо", "Черный перец", "Черный тмин", "Шрирача", "Эвкалипт", "Красный перец",
+]);
+function infusionSortTier(name){
+  if (name.startsWith("Водка")) return 1;
+  if (INFUSION_TIER_SYRUP_RLK.has(name)) return 2;
+  if (INFUSION_TIER_ACID.has(name)) return 3;
+  if (INFUSION_TIER_SPICE.has(name) || name.startsWith("Арома")) return 5;
+  return 0; // основа — всё остальное
+}
+
+let infusionsSelected = new Set();
+let infusionQty = {}; // name -> qty string (литры)
+
+function renderInfusionItems(filterText){
+  const container = document.getElementById("infusions-items");
+  container.innerHTML = "";
+  const f = (filterText || "").trim().toLowerCase();
+  const list = INFUSIONS_SORTED.filter(r => !f || r.name.toLowerCase().includes(f));
+  if (list.length === 0){
+    container.innerHTML = `<div class="field-hint" style="padding:10px 0;">Ничего не найдено</div>`;
+    return;
+  }
+  list.forEach(r => {
+    if (!(r.name in infusionQty)) infusionQty[r.name] = "";
+    const div = document.createElement("div");
+    div.className = "beer-item";
+    div.innerHTML = `
+      <div class="beer-item-name">${r.name}</div>
+      <div class="beer-input-row">
+        <input class="num-input" type="number" min="0" step="1" inputmode="numeric" placeholder="0" style="flex:0 0 90px; margin-left:auto;" value="${infusionQty[r.name]}">
+        <div style="align-self:center; color:var(--text-dim); font-size:14px; flex:0 0 auto;">л.</div>
+      </div>
+    `;
+    div.querySelector(".num-input").addEventListener("input", e => {
+      // заказ настоек всегда кратен целому литру
+      let v = e.target.value.replace(",", ".");
+      if (v && !isNaN(parseFloat(v))) v = String(Math.round(parseFloat(v)));
+      e.target.value = v;
+      infusionQty[r.name] = v;
+      refreshInfusionsHint();
+    });
+    container.appendChild(div);
+  });
+}
+
+function infusionsReady(){
+  const spirt = document.getElementById("infusions-spirt").value.trim();
+  const acid = document.getElementById("infusions-acid").value.trim();
+  return getNames(infusionsSelected, "infusions").length > 0 &&
+    (spirt.length > 0 || acid.length > 0 ||
+     Object.values(infusionQty).some(v => v && parseFloat(String(v).replace(",", ".")) > 0));
+}
+function refreshInfusionsHint(){
+  const btn = document.getElementById("infusions-submit");
+  const hint = document.getElementById("infusions-hint");
+  const ready = infusionsReady();
+  btn.classList.toggle("ready", ready);
+  hint.textContent = ready ? "Готово к отправке" : "Выбери бармена и укажи количество хотя бы одной позиции";
+}
+
+document.getElementById("go-infusions").addEventListener("click", () => {
+  document.getElementById("infusions-meta").textContent = formatDateRu() + " · " + nowTimeStr();
+  document.getElementById("infusions-search").value = "";
+  renderInfusionItems("");
+  refreshInfusionsHint();
+  showScreen("screen-infusions");
+});
+document.getElementById("back-from-infusions").addEventListener("click", () => showScreen("screen-procurement"));
+renderChips("infusions-employee-chips", infusionsSelected, refreshInfusionsHint);
+setupExtraToggle("infusions", refreshInfusionsHint);
+document.getElementById("infusions-search").addEventListener("input", e => renderInfusionItems(e.target.value));
+document.getElementById("infusions-spirt").addEventListener("input", refreshInfusionsHint);
+document.getElementById("infusions-acid").addEventListener("input", refreshInfusionsHint);
+document.getElementById("infusions-spirt-notneed").addEventListener("click", () => {
+  const btn = document.getElementById("infusions-spirt-notneed");
+  const input = document.getElementById("infusions-spirt");
+  const active = btn.classList.toggle("active-notneed");
+  input.disabled = active;
+  if (active) input.value = "";
+  refreshInfusionsHint();
+});
+document.getElementById("infusions-acid-notneed").addEventListener("click", () => {
+  const btn = document.getElementById("infusions-acid-notneed");
+  const input = document.getElementById("infusions-acid");
+  const active = btn.classList.toggle("active-notneed");
+  input.disabled = active;
+  if (active) input.value = "";
+  refreshInfusionsHint();
+});
+
+document.getElementById("infusions-submit").addEventListener("click", () => {
+  if (!infusionsReady()){
+    const hint = document.getElementById("infusions-hint");
+    hint.textContent = "Выбери бармена и укажи количество хотя бы одной позиции";
+    hint.classList.add("angry");
+    const btn = document.getElementById("infusions-submit");
+    btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
+    return;
+  }
+  const names = getNames(infusionsSelected, "infusions").join(", ");
+  const spirt = document.getElementById("infusions-spirt").value.trim();
+  const acid = document.getElementById("infusions-acid").value.trim();
+
+  const ordered = INFUSIONS_SORTED
+    .map(r => ({ recipe: r, qty: parseFloat(String(infusionQty[r.name] || "0").replace(",", ".")) }))
+    .filter(x => x.qty > 0);
+
+  // Суммируем сырьё по всем заказанным настойкам (ключ: название + единица измерения,
+  // чтобы не смешивать одинаковые ингредиенты, записанные в разных карточках в разных единицах)
+  const totals = {};
+  ordered.forEach(({ recipe, qty }) => {
+    recipe.ingredients.forEach(ing => {
+      const key = ing.name + "|" + ing.unit;
+      if (!totals[key]) totals[key] = { name: ing.name, unit: ing.unit, qty: 0 };
+      totals[key].qty += ing.qty * qty;
+    });
+  });
+  const totalLines = Object.values(totals).sort((a,b) => {
+    const ta = infusionSortTier(a.name), tb = infusionSortTier(b.name);
+    if (ta !== tb) return ta - tb;
+    return a.name.localeCompare(b.name, 'ru');
+  });
+
+  let text = `rambling :\n🫙 Заявка на настойки\nДата: ${formatDateRu()}\nБармен: ${names}\n\n📋 ЗАКАЗАНО:`;
+  if (ordered.length === 0){
+    text += "\n(настойки не заказаны)";
+  }
+  ordered.forEach(({ recipe, qty }) => {
+    const qtyStr = Number.isInteger(qty) ? qty : qty.toFixed(1).replace(".", ",");
+    text += `\n— ${recipe.name}: ${qtyStr} л.`;
+  });
+
+  text += `\n\n🧾 ИТОГО ЗАКУПИТЬ (авторасчёт):`;
+  if (totalLines.length === 0 && !spirt && !acid){
+    text += "\n(нет позиций)";
+  }
+  totalLines.forEach(t => {
+    const rounded = Math.round(t.qty * 100) / 100;
+    const qtyStr = Number.isInteger(rounded) ? rounded : String(rounded).replace(".", ",");
+    const supplier = INFUSION_INGREDIENT_SUPPLIERS[t.name];
+    text += `\n— ${t.name}: ${qtyStr} ${t.unit}${supplier ? ` (${supplier})` : ""}`;
+  });
+  if (spirt) text += `\n— Спирт: ${spirt}`;
+  if (acid) text += `\n— Лимонная кислота: ${acid}`;
+
+  document.getElementById("done-badge").textContent = "🫙";
+  document.getElementById("done-title").textContent = "Заявка отправлена";
+  document.getElementById("msg-preview").textContent = text;
+  showScreen("screen-done");
+  sendReportToTelegram(text);
+});
+
+document.getElementById("home-btn").addEventListener("click", () => {
+  showScreen("screen-root");
+});
+
+if (window.Telegram && window.Telegram.WebApp){
+  const tg = window.Telegram.WebApp;
+  tg.ready();
+  tg.expand();
+}
+</script>
+</body>
+</html>
