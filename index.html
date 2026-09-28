@@ -475,6 +475,12 @@
 
       <div id="infusions-items"></div>
 
+      <hr class="section-divider">
+      <div class="section-title">🌱 Сезонная/новая настойка</div>
+      <div class="field-hint" style="margin-bottom:10px;">Если нужной настойки нет в списке выше — опиши её здесь в свободной форме</div>
+      <div id="custom-infusion-rows"></div>
+      <button class="add-expense-btn" id="add-custom-infusion" type="button">+ Добавить настойку</button>
+
     </div>
     <div class="bottom-bar">
       <div class="finish-hint" id="infusions-hint">Выбери бармена и укажи количество хотя бы одной позиции</div>
@@ -1157,7 +1163,7 @@ document.getElementById("go-cash-menu").addEventListener("click", () => showScre
 document.getElementById("back-from-menu").addEventListener("click", () => showScreen("screen-root"));
 
 /* ---------- procurement request: per-section day gating ---------- */
-const PROCUREMENT_TEST_MODE = true; // ВРЕМЕННО: true = все разделы открыты в любой день, для теста. Поставь false, чтобы вернуть ограничение по дням.
+const PROCUREMENT_TEST_MODE = true; // ВРЕМЕННО: true = все разделы открыты в любой день, для теста/обучения сотрудников. Поставь false, чтобы включить боевой режим (заявки только по средам и воскресеньям).
 const PROCUREMENT_PREVIEW_DAY = null; // ВРЕМЕННО для предпросмотра конкретного дня: 3 = среда, 0 = воскресенье, null = использовать настоящий сегодняшний день
 function currentDow(){
   return PROCUREMENT_PREVIEW_DAY !== null ? PROCUREMENT_PREVIEW_DAY : new Date().getDay();
@@ -2139,6 +2145,18 @@ const INFUSION_RECIPES = [
     { name: "РЛК", qty: 150, unit: "мл" },
     { name: "Сок грейпфрута", qty: 200, unit: "мл" },
   ]},
+  { name: "Мандарин", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Мандарины неочищенные (со шкуркой)", qty: 1000, unit: "гр" },
+    { name: "Сахарный сироп", qty: 150, unit: "мл" },
+    { name: "РЛК", qty: 150, unit: "мл" },
+  ]},
+  { name: "Супер острая", ingredients: [
+    { name: "Водка 30%", qty: 1000, unit: "мл" },
+    { name: "Острые перцы чили", qty: 300, unit: "гр" },
+    { name: "РЛК", qty: 100, unit: "мл" },
+    { name: "Сахарный сироп", qty: 100, unit: "мл" },
+  ], assumption: "Крепость водки не указана — принято 30%, как в большинстве рецептов. «Сахар 100» без единицы измерения — принято за сахарный сироп 100 мл, по аналогии с остальными рецептами." },
 ];
 const INFUSIONS_SORTED = [...INFUSION_RECIPES].sort((a,b)=>a.name.localeCompare(b.name,'ru'));
 
@@ -2237,6 +2255,33 @@ function infusionSortTier(name){
 
 let infusionsSelected = new Set();
 let infusionQty = {}; // name -> qty string (литры)
+let customInfusions = []; // { name, note } — сезонные/новые настойки, которых нет в списке
+
+function addCustomInfusionRow(){
+  customInfusions.push({ name: "", note: "" });
+  renderCustomInfusions();
+}
+function renderCustomInfusions(){
+  const container = document.getElementById("custom-infusion-rows");
+  container.innerHTML = "";
+  customInfusions.forEach((ci, idx) => {
+    const card = document.createElement("div");
+    card.className = "beer-item";
+    card.style.marginBottom = "10px";
+    card.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px;">
+        <div class="beer-item-name" style="flex:1;">🌱 Настойка</div>
+        <button class="remove-expense" type="button" data-role="ci-remove" style="width:36px; height:36px; flex:none;">×</button>
+      </div>
+      <input class="text-input" type="text" placeholder="Название настойки" data-role="ci-name" value="${ci.name}" style="margin-bottom:10px;">
+      <textarea class="text-input" rows="2" placeholder="Что нужно и сколько (например: облепиха 1 кг, сахар 200 мл)" data-role="ci-note" style="resize:vertical;">${ci.note}</textarea>
+    `;
+    card.querySelector('[data-role="ci-name"]').addEventListener("input", e => { customInfusions[idx].name = e.target.value; refreshInfusionsHint(); });
+    card.querySelector('[data-role="ci-note"]').addEventListener("input", e => { customInfusions[idx].note = e.target.value; });
+    card.querySelector('[data-role="ci-remove"]').addEventListener("click", () => { customInfusions.splice(idx,1); renderCustomInfusions(); refreshInfusionsHint(); });
+    container.appendChild(card);
+  });
+}
 
 function renderInfusionItems(filterText){
   const container = document.getElementById("infusions-items");
@@ -2273,8 +2318,9 @@ function renderInfusionItems(filterText){
 function infusionsReady(){
   const spirt = document.getElementById("infusions-spirt").value.trim();
   const acid = document.getElementById("infusions-acid").value.trim();
+  const hasCustomInfusion = customInfusions.some(ci => ci.name.trim().length > 0);
   return getNames(infusionsSelected, "infusions").length > 0 &&
-    (spirt.length > 0 || acid.length > 0 ||
+    (spirt.length > 0 || acid.length > 0 || hasCustomInfusion ||
      Object.values(infusionQty).some(v => v && parseFloat(String(v).replace(",", ".")) > 0));
 }
 function refreshInfusionsHint(){
@@ -2314,6 +2360,7 @@ document.getElementById("infusions-acid-notneed").addEventListener("click", () =
   if (active) input.value = "";
   refreshInfusionsHint();
 });
+document.getElementById("add-custom-infusion").addEventListener("click", addCustomInfusionRow);
 
 document.getElementById("infusions-submit").addEventListener("click", () => {
   if (!infusionsReady()){
@@ -2369,6 +2416,14 @@ document.getElementById("infusions-submit").addEventListener("click", () => {
   });
   if (spirt) text += `\n— Спирт: ${spirt}`;
   if (acid) text += `\n— Лимонная кислота: ${acid}`;
+
+  const filledCustomInfusions = customInfusions.filter(ci => ci.name.trim().length > 0);
+  if (filledCustomInfusions.length > 0){
+    text += `\n\n🌱 Сезонные/новые настойки (не из списка):`;
+    filledCustomInfusions.forEach(ci => {
+      text += `\n— ${ci.name.trim()}${ci.note.trim() ? `: ${ci.note.trim()}` : ""}`;
+    });
+  }
 
   document.getElementById("done-badge").textContent = "🫙";
   document.getElementById("done-title").textContent = "Заявка отправлена";
