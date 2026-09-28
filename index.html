@@ -739,7 +739,7 @@ const RELAY_URL = "https://rambling-relay.avikulov91.workers.dev/";
 // Совпадает со значением APP_SECRET, которое задаётся в настройках Worker'а в Cloudflare.
 const RELAY_APP_SECRET = "";
 
-async function sendReportToTelegram(text){
+async function sendReportToTelegram(text, type){
   const statusEl = document.getElementById("send-status");
   if (!statusEl) return;
   statusEl.style.display = "block";
@@ -749,7 +749,7 @@ async function sendReportToTelegram(text){
     const resp = await fetch(RELAY_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-App-Secret": RELAY_APP_SECRET },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, type }),
     });
     let data = {};
     try { data = await resp.json(); } catch (e) {}
@@ -934,7 +934,7 @@ document.getElementById("open-submit").addEventListener("click", () => {
   document.getElementById("done-title").textContent = "Касса открыта";
   document.getElementById("msg-preview").textContent = text;
   showScreen("screen-done");
-  sendReportToTelegram(text);
+  sendReportToTelegram(text, "cash");
 });
 
 /* ---------- CLOSE SHIFT ---------- */
@@ -1097,7 +1097,7 @@ ${Math.abs(diff) < 0.01 ? "✅ Разница: 0" : `⚠️ Разница: ${(d
   document.getElementById("done-title").textContent = "Касса закрыта";
   document.getElementById("msg-preview").textContent = text;
   showScreen("screen-done");
-  sendReportToTelegram(text);
+  sendReportToTelegram(text, "cash");
 });
 
 document.getElementById("go-cash-menu").addEventListener("click", () => showScreen("screen-menu"));
@@ -1271,7 +1271,7 @@ document.getElementById("beer-submit").addEventListener("click", () => {
   document.getElementById("done-title").textContent = "Заявка отправлена";
   document.getElementById("msg-preview").textContent = text;
   showScreen("screen-done");
-  sendReportToTelegram(text);
+  sendReportToTelegram(text, "request");
 });
 
 /* ---------- HERBS ORDER ---------- */
@@ -1358,7 +1358,7 @@ document.getElementById("herbs-submit").addEventListener("click", () => {
   document.getElementById("done-title").textContent = "Заявка отправлена";
   document.getElementById("msg-preview").textContent = text;
   showScreen("screen-done");
-  sendReportToTelegram(text);
+  sendReportToTelegram(text, "request");
 });
 
 /* ---------- ALCOHOL ORDER ---------- */
@@ -1592,7 +1592,7 @@ document.getElementById("alcohol-submit").addEventListener("click", () => {
   document.getElementById("done-title").textContent = "Заявка отправлена";
   document.getElementById("msg-preview").textContent = text;
   showScreen("screen-done");
-  sendReportToTelegram(text);
+  sendReportToTelegram(text, "request");
 });
 
 /* ---------- HOUSEHOLD SUPPLIES ORDER ---------- */
@@ -1702,7 +1702,7 @@ document.getElementById("household-submit").addEventListener("click", () => {
   document.getElementById("done-title").textContent = "Заявка отправлена";
   document.getElementById("msg-preview").textContent = text;
   showScreen("screen-done");
-  sendReportToTelegram(text);
+  sendReportToTelegram(text, "request");
 });
 
 /* ---------- FRUITS ORDER ---------- */
@@ -1790,7 +1790,7 @@ document.getElementById("fruits-submit").addEventListener("click", () => {
   document.getElementById("done-title").textContent = "Заявка отправлена";
   document.getElementById("msg-preview").textContent = text;
   showScreen("screen-done");
-  sendReportToTelegram(text);
+  sendReportToTelegram(text, "request");
 });
 
 /* ---------- CUSTOM (FREE-FORM) ORDER ---------- */
@@ -1834,7 +1834,7 @@ document.getElementById("custom-submit").addEventListener("click", () => {
   document.getElementById("done-title").textContent = "Заявка отправлена";
   document.getElementById("msg-preview").textContent = text;
   showScreen("screen-done");
-  sendReportToTelegram(text);
+  sendReportToTelegram(text, "request");
 });
 
 /* ---------- INFUSIONS (НАСТОЙКИ) ORDER ---------- */
@@ -2321,7 +2321,7 @@ document.getElementById("infusions-submit").addEventListener("click", () => {
   document.getElementById("done-title").textContent = "Заявка отправлена";
   document.getElementById("msg-preview").textContent = text;
   showScreen("screen-done");
-  sendReportToTelegram(text);
+  sendReportToTelegram(text, "request");
 });
 
 document.getElementById("home-btn").addEventListener("click", () => {
