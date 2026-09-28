@@ -357,6 +357,18 @@
       </button>
       <button class="option-btn" id="go-cocktails"><span>🍸 Коктейли — технички</span><span class="arrow">›</span></button>
       <button class="option-btn" id="go-infusions-ref"><span>🫙 Настойки — технички</span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-schedule"><span>📅 График работы</span><span class="arrow">›</span></button>
+    </div>
+  </div>
+
+  <!-- SCREEN: shift schedule -->
+  <div class="screen" id="screen-schedule">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-schedule" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">📅 График работы</div>
+    </div>
+    <div class="form-body">
+      <div id="schedule-list"></div>
     </div>
   </div>
 
@@ -11513,6 +11525,109 @@ document.getElementById("infusion-ref-detail-body").addEventListener("click", (e
   const el = e.target.closest(".prep-link");
   if (el) openPrepModal(el.dataset.prep);
 });
+
+/* ---------- ГРАФИК РАБОТЫ (смены сотрудников) ---------- */
+// Обновляется вручную по мере поступления нового графика от Алексея — старый график
+// нужно заменять/дополнять здесь. Формат даты — "YYYY-MM-DD".
+// Каждая запись: { date: "YYYY-MM-DD", staff: ["Имя1", "Имя2", ...], off?: "Имя" }
+const SHIFT_SCHEDULE = [
+  { date: "2026-09-01", staff: ["Саша", "Таня"], off: "Коля" },
+  { date: "2026-09-02", staff: ["Саша", "Коля"], off: "Таня" },
+  { date: "2026-09-03", staff: ["Таня", "Коля"], off: "Саша" },
+  { date: "2026-09-04", staff: ["Саша", "Таня"], off: "Коля" },
+  { date: "2026-09-05", staff: ["Таня", "Коля"], off: "Саша" },
+  { date: "2026-09-06", staff: ["Саша", "Таня"], off: "Коля" },
+  { date: "2026-09-07", staff: ["Саша", "Коля"], off: "Таня" },
+  { date: "2026-09-08", staff: ["Саша", "Таня"], off: "Коля" },
+  { date: "2026-09-09", staff: ["Саша", "Таня"], off: "Коля" },
+  { date: "2026-09-10", staff: ["Таня", "Коля"], off: "Саша" },
+  { date: "2026-09-11", staff: ["Саша", "Таня"], off: "Коля" },
+  { date: "2026-09-12", staff: ["Саша", "Коля"], off: "Таня" },
+  { date: "2026-09-13", staff: ["Саша", "Семен"], off: "Коля" },
+  { date: "2026-09-14", staff: ["Саша", "Семен"], off: "Коля" },
+  { date: "2026-09-15", staff: ["Таня", "Коля"], off: "Саша" },
+  { date: "2026-09-16", staff: ["Саша", "Таня"], off: "Коля" },
+  { date: "2026-09-17", staff: ["Саша", "Коля"], off: "Таня" },
+  { date: "2026-09-18", staff: ["Саша", "Семен"], off: "Коля" },
+  { date: "2026-09-19", staff: ["Саша", "Семен"], off: "Коля" },
+  { date: "2026-09-20", staff: ["Оля", "Коля"], off: "Саша" },
+  { date: "2026-09-21", staff: ["Саша", "Семен"], off: "Коля" },
+  { date: "2026-09-22", staff: ["Саша", "Коля"], off: "Таня" },
+  { date: "2026-09-23", staff: ["Саша", "Семен"], off: "Коля" },
+  { date: "2026-09-24", staff: ["Саша", "Оля"], off: "Коля" },
+  { date: "2026-09-25", staff: ["Семен", "Коля"], off: "Саша" },
+  { date: "2026-09-26", staff: ["Саша", "Таня"], off: "Коля" },
+  { date: "2026-09-27", staff: ["Саша", "Коля"], off: "Таня" },
+  { date: "2026-09-28", staff: ["Саша", "Таня"], off: "Коля" },
+  { date: "2026-09-29", staff: ["Таня", "Саша"], off: "Коля" },
+  { date: "2026-09-30", staff: ["Таня", "Коля"], off: "Саша" },
+];
+
+const WEEKDAY_NAMES_RU = ["воскресенье","понедельник","вторник","среда","четверг","пятница","суббота"];
+const MONTH_NAMES_RU = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+
+function todayDateStr(){
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+
+function formatScheduleDate(dateStr){
+  // dateStr: "YYYY-MM-DD" — парсим как локальную дату, без сдвига часовым поясом
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  const weekday = WEEKDAY_NAMES_RU[dt.getDay()];
+  return `${d} ${MONTH_NAMES_RU[m - 1]}, ${weekday}`;
+}
+
+// Календарные выходные — суббота/воскресенье (не путать с личным выходным дня "off",
+// который у каждого свой и не привязан к календарной субботе/воскресенью).
+function isWeekendDate(dateStr){
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dow = new Date(y, m - 1, d).getDay();
+  return dow === 0 || dow === 6;
+}
+
+function renderSchedule(){
+  const container = document.getElementById("schedule-list");
+  container.innerHTML = "";
+  if (SHIFT_SCHEDULE.length === 0){
+    container.innerHTML = `<div class="field-hint" style="padding:10px 0;">График пока не добавлен — пришли даты и кто работает, и я его заполню.</div>`;
+    return;
+  }
+  const today = todayDateStr();
+  const sorted = [...SHIFT_SCHEDULE].sort((a, b) => a.date.localeCompare(b.date));
+  sorted.forEach(entry => {
+    const isPast = entry.date < today;
+    const isToday = entry.date === today;
+    const isCalendarWeekend = isWeekendDate(entry.date);
+    const card = document.createElement("div");
+    card.className = "sum-card";
+    card.style.marginBottom = "10px";
+    if (isCalendarWeekend){
+      card.style.background = "var(--amber-dim)";
+      card.style.borderLeft = "4px solid var(--amber)";
+    }
+    if (isPast) card.style.opacity = "0.45";
+    if (isToday) card.style.border = "1px solid var(--red)";
+    const todayBadge = isToday ? ` <span style="color: var(--red); font-weight:800;">· сегодня</span>` : "";
+    const weekendBadge = isCalendarWeekend ? ` <span style="color: var(--amber); font-weight:800;">· 📅 календарные выходные</span>` : "";
+    const offLine = entry.off ? `<div class="field-hint" style="margin-top:2px;">${entry.off} — выходной</div>` : "";
+    card.innerHTML = `
+      <div class="sum-row" style="margin-bottom:6px;">
+        <span class="label" style="font-weight:800; color: var(--text);"><span style="text-transform:capitalize;">${formatScheduleDate(entry.date)}</span>${todayBadge}${weekendBadge}</span>
+      </div>
+      <div class="sum-row"><span class="value" style="text-align:left; color: var(--text);">${entry.staff.join(", ")}</span></div>
+      ${offLine}
+    `;
+    container.appendChild(card);
+  });
+}
+
+document.getElementById("go-schedule").addEventListener("click", () => {
+  renderSchedule();
+  showScreen("screen-schedule");
+});
+document.getElementById("back-from-schedule").addEventListener("click", () => showScreen("screen-root"));
 
 // Поставщик по каждому сырьевому ингредиенту (не по настойке) — используется, чтобы в
 // итоговом списке закупки сразу было видно, у кого что брать. Ингредиенты без поставщика
