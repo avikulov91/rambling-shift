@@ -1068,8 +1068,16 @@ document.getElementById("close-submit").addEventListener("click", () => {
 Время: ${nowTimeStr()}
 Касса на начало смены: ${fmt(openingCash)}
 
-📟 Постер: нал. ${fmt(posterCash)} + карта ${fmt(posterCard)} = ${fmt(posterTotal)}
-💵 Факт: нал. ${fmt(actualCash)} + карта ${fmt(actualCard)} = ${fmt(actualTotal)}
+📟 Постер:
+нал. ${fmt(posterCash)}
+карта ${fmt(posterCard)}
+общий итог: ${fmt(posterTotal)}
+
+💵 Факт:
+нал. ${fmt(actualCash)}
+карта ${fmt(actualCard)}
+общий итог: ${fmt(actualTotal)}
+
 ${Math.abs(diff) < 0.01 ? "✅ Разница: 0" : `⚠️ Разница: ${(diff > 0 ? "+" : "") + fmt(diff)}`}`;
 
   if (diffComment){
