@@ -192,6 +192,17 @@
   }
   .final-card .label{ font-size:13.5px; color: var(--text-dim); font-weight:600; margin-bottom:6px; }
   .final-card .value{ font-size:30px; font-weight:800; color: var(--amber); }
+  .final-card .value-input{
+    width:100%; text-align:center; background:transparent; border:none;
+    border-bottom:2px dashed var(--amber-dim); color: var(--amber);
+    font-family: inherit; font-size:30px; font-weight:800; padding:4px 0 8px;
+  }
+  .final-card .value-input:focus{ outline:none; border-bottom-color: var(--amber); }
+  .final-card .auto-hint{ font-size:12px; color: var(--text-dim); margin-top:8px; }
+  .final-card .reset-btn{
+    margin-top:10px; padding:8px 14px; border-radius:10px; border:1px solid var(--line);
+    background:transparent; color: var(--text-dim); font-size:13px; font-weight:600;
+  }
 
   .bottom-bar{
     width:100%; max-width:480px; margin: 24px auto 0;
@@ -653,6 +664,12 @@
       </div>
 
       <hr class="section-divider">
+      <div class="section-title">🧾 Кассовые наличные (пробито доп. к обороту)</div>
+      <div class="field-hint" id="pos-tips-suggest-hint">Рекомендуется пробить: 0 ₾ (10% от оборота наличных по Постеру)</div>
+      <input class="num-input" type="number" inputmode="decimal" id="pos-tips" placeholder="0">
+      <button type="button" class="calc-apply-btn" id="pos-tips-suggest-btn" style="margin-top:8px;">Подставить рекомендованную сумму</button>
+
+      <hr class="section-divider">
       <div class="section-title">💵 Фактически</div>
       <div class="input-row">
         <div class="input-col">
@@ -700,7 +717,9 @@
 
       <div class="final-card">
         <div class="label">Остаток наличных в кассе</div>
-        <div class="value" id="final-balance">0 ₾</div>
+        <input class="value-input" type="number" inputmode="decimal" id="final-balance">
+        <div class="auto-hint" id="final-balance-auto-hint">Авто-расчёт: 0 ₾</div>
+        <button type="button" class="reset-btn" id="final-balance-reset-btn" style="display:none;">↺ Вернуть авто-расчёт</button>
       </div>
 
       <div class="field-block" style="margin-top:20px;">
@@ -940,6 +959,7 @@ document.getElementById("open-submit").addEventListener("click", () => {
 /* ---------- CLOSE SHIFT ---------- */
 let closeSelected = new Set();
 let expenses = []; // { name, amount }
+let finalBalanceEdited = false; // true, если бармен вручную поправил остаток в кассе
 
 function addExpenseRow(){
   expenses.push({ name: "", amount: "" });
@@ -983,6 +1003,10 @@ function recalcClose(){
   document.getElementById("poster-total").textContent = fmt(posterTotal);
   document.getElementById("actual-total").textContent = fmt(actualTotal);
 
+  const suggestedTips = Math.round(posterCash * 0.10 * 100) / 100;
+  document.getElementById("pos-tips-suggest-hint").textContent =
+    `Рекомендуется пробить: ${fmt(suggestedTips)} (10% от оборота наличных по Постеру: ${fmt(posterCash)})`;
+
   const diffCard = document.getElementById("diff-card");
   const diffValue = document.getElementById("diff-value");
   const okDiff = Math.abs(diff) < 0.01;
@@ -996,7 +1020,10 @@ function recalcClose(){
   const expensesTotal = expenses.reduce((sum, e) => sum + num(e.amount), 0);
 
   const finalBalance = openingCash + actualCash - salary - cardTips - expensesTotal;
-  document.getElementById("final-balance").textContent = fmt(finalBalance);
+  document.getElementById("final-balance-auto-hint").textContent = `Авто-расчёт: ${fmt(finalBalance)}`;
+  if (!finalBalanceEdited){
+    document.getElementById("final-balance").value = Math.round(finalBalance * 100) / 100;
+  }
 
   refreshCloseHint();
 }
@@ -1019,6 +1046,21 @@ document.getElementById("go-close").addEventListener("click", () => {
   showScreen("screen-close");
 });
 document.getElementById("back-from-close").addEventListener("click", () => showScreen("screen-menu"));
+document.getElementById("pos-tips-suggest-btn").addEventListener("click", () => {
+  const posterCash = num(document.getElementById("poster-cash").value);
+  const suggestedTips = Math.round(posterCash * 0.10 * 100) / 100;
+  document.getElementById("pos-tips").value = suggestedTips;
+  recalcClose();
+});
+document.getElementById("final-balance").addEventListener("input", () => {
+  finalBalanceEdited = true;
+  document.getElementById("final-balance-reset-btn").style.display = "inline-block";
+});
+document.getElementById("final-balance-reset-btn").addEventListener("click", () => {
+  finalBalanceEdited = false;
+  document.getElementById("final-balance-reset-btn").style.display = "none";
+  recalcClose();
+});
 renderChips("close-employee-chips", closeSelected, () => { refreshCloseHint(); });
 setupExtraToggle("close", refreshCloseHint);
 setupCashCalculator({
@@ -1030,7 +1072,7 @@ setupCashCalculator({
   applyId: "close-cash-calc-apply",
   onApply: refreshCloseHint,
 });
-["close-opening-cash","poster-cash","poster-card","actual-cash","actual-card","salary","card-tips"].forEach(id => {
+["close-opening-cash","poster-cash","poster-card","pos-tips","actual-cash","actual-card","salary","card-tips"].forEach(id => {
   document.getElementById(id).addEventListener("input", recalcClose);
 });
 document.getElementById("add-expense").addEventListener("click", addExpenseRow);
@@ -1050,6 +1092,7 @@ document.getElementById("close-submit").addEventListener("click", () => {
   const posterCash = num(document.getElementById("poster-cash").value);
   const posterCard = num(document.getElementById("poster-card").value);
   const posterTotal = posterCash + posterCard;
+  const posTips = num(document.getElementById("pos-tips").value);
   const actualCash = num(document.getElementById("actual-cash").value);
   const actualCard = num(document.getElementById("actual-card").value);
   const actualTotal = actualCash + actualCard;
@@ -1058,7 +1101,7 @@ document.getElementById("close-submit").addEventListener("click", () => {
   const salary = num(document.getElementById("salary").value);
   const cardTips = num(document.getElementById("card-tips").value);
   const expensesTotal = expenses.reduce((sum, e) => sum + num(e.amount), 0);
-  const finalBalance = openingCash + actualCash - salary - cardTips - expensesTotal;
+  const finalBalance = num(document.getElementById("final-balance").value);
 
   let text =
 `rambling :
@@ -1072,6 +1115,8 @@ document.getElementById("close-submit").addEventListener("click", () => {
 нал. ${fmt(posterCash)}
 карта ${fmt(posterCard)}
 общий итог: ${fmt(posterTotal)}
+
+🧾 Кассовые наличные (пробито): ${fmt(posTips)}
 
 💵 Факт:
 нал. ${fmt(actualCash)}
