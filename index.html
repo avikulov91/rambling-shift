@@ -11863,6 +11863,7 @@ function renderSchedule(){
     ${todayEntry ? `
       <div class="sum-row"><span class="value" style="text-align:left; color: var(--text);">👥 Работают: ${todayEntry.staff.join(", ") || "—"}</span></div>
       ${renderOffBadge(todayEntry.off)}
+      <div><button class="chip" type="button" data-swap-date="${today}" style="margin-top:10px; font-size:13px; padding:6px 12px;">🔄 Замена</button></div>
     ` : `<div class="field-hint" style="margin-top:2px;">График на сегодня ещё не загружен</div>`}
   `;
   container.appendChild(summary);
