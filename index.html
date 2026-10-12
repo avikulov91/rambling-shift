@@ -9135,7 +9135,7 @@ document.getElementById("back-from-cocktail-detail").addEventListener("click", (
 document.getElementById("cocktails-search").addEventListener("input", e => renderCocktailsList(e.target.value));
 
 /* ---------- procurement request: per-section day gating ---------- */
-const PROCUREMENT_TEST_MODE = true; // ВРЕМЕННО: true = все разделы открыты в любой день, для теста/обучения сотрудников. Поставь false, чтобы включить боевой режим (заявки только по средам и воскресеньям).
+const PROCUREMENT_TEST_MODE = false; // false = боевой режим: заявки и плашка-напоминание только по своим дням (среда/воскресенье). true включали на время теста/обучения сотрудников.
 const PROCUREMENT_PREVIEW_DAY = null; // ВРЕМЕННО для предпросмотра конкретного дня: 3 = среда, 0 = воскресенье, null = использовать настоящий сегодняшний день
 function currentDow(){
   return PROCUREMENT_PREVIEW_DAY !== null ? PROCUREMENT_PREVIEW_DAY : new Date().getDay();
