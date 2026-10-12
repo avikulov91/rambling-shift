@@ -351,6 +351,7 @@
     </div>
     <div class="option-list">
       <button class="option-btn" id="go-cash-menu"><span>💰 Открытие/закрытие кассы</span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-expense-quick"><span>💸 Записать трату</span><span class="arrow">›</span></button>
       <button class="option-btn" id="go-procurement">
         <span>🧾 Заявка на закупку<span class="sub" id="procurement-sub" style="display:none;">Доступно по средам и воскресеньям</span></span>
         <span class="arrow">›</span>
@@ -689,6 +690,44 @@
     </div>
   </div>
 
+  <!-- SCREEN: quick expense during shift -->
+  <div class="screen" id="screen-expense-quick">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-expense-quick" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">💸 Записать трату</div>
+      <div class="top-bar-meta" id="expense-quick-meta"></div>
+    </div>
+    <div class="form-body">
+
+      <div class="field-block">
+        <div class="field-label">Кто потратил (необязательно)</div>
+        <div class="chip-row" id="expense-quick-employee-chips"></div>
+        <button class="add-expense-btn" id="expense-quick-toggle-extra" type="button" style="margin-top:10px;">+ Дополнительный бармен</button>
+        <div id="expense-quick-extra-wrap" style="display:none; margin-top:10px;">
+          <input class="text-input" type="text" id="expense-quick-extra-name" placeholder="Имя дополнительного бармена">
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div class="input-col">
+          <div class="input-col-label">На что потратили</div>
+          <input class="text-input" type="text" id="expense-quick-name" placeholder="Лёд, такси и т.п.">
+        </div>
+        <div class="input-col amount-col">
+          <div class="input-col-label">Сумма</div>
+          <input class="num-input" type="number" inputmode="decimal" id="expense-quick-amount" placeholder="0">
+        </div>
+      </div>
+
+      <div class="field-hint" style="margin-top:10px;">Трата сразу уйдёт в чат Rambling и сама появится в «Прочих тратах» при закрытии кассы — вбивать её туда ещё раз не нужно.</div>
+
+    </div>
+    <div class="bottom-bar">
+      <div class="finish-hint" id="expense-quick-hint">Укажите, на что и сколько</div>
+      <button class="finish-btn" id="expense-quick-submit">💸 Отправить</button>
+    </div>
+  </div>
+
   <!-- SCREEN 0: cash menu -->
   <div class="screen center-screen" id="screen-menu">
     <div class="back-link" id="back-from-menu">← Назад</div>
@@ -876,17 +915,19 @@ const RELAY_URL = "https://rambling-relay.avikulov91.workers.dev/";
 // Совпадает со значением APP_SECRET, которое задаётся в настройках Worker'а в Cloudflare.
 const RELAY_APP_SECRET = "";
 
-async function sendReportToTelegram(text, type){
+async function sendReportToTelegram(text, type, entry){
   const statusEl = document.getElementById("send-status");
   if (!statusEl) return;
   statusEl.style.display = "block";
   statusEl.classList.remove("status-ok", "status-error");
   statusEl.textContent = "⏳ Отправка в чат Rambling…";
   try {
+    const payload = { text, type };
+    if (entry) payload.entry = entry; // для type:"expense" — Worker сохраняет её в KV на сегодняшний день
     const resp = await fetch(RELAY_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-App-Secret": RELAY_APP_SECRET },
-      body: JSON.stringify({ text, type }),
+      body: JSON.stringify(payload),
     });
     let data = {};
     try { data = await resp.json(); } catch (e) {}
@@ -1076,13 +1117,46 @@ document.getElementById("open-submit").addEventListener("click", () => {
 
 /* ---------- CLOSE SHIFT ---------- */
 let closeSelected = new Set();
-let expenses = []; // { name, amount }
+let expenses = []; // { name, amount, auto?, id? }
 let finalBalanceEdited = false; // true, если бармен вручную поправил остаток в кассе
+let autoExpenseIds = new Set(); // id трат, уже подтянутых с сервера в этой сессии (чтобы не задваивать)
 
 function addExpenseRow(){
   expenses.push({ name: "", amount: "" });
   renderExpenses();
 }
+
+// Подтягивает траты, которые бармены уже отправили за сегодня через «💸 Записать трату»,
+// чтобы не вбивать их вручную ещё раз при закрытии кассы.
+async function fetchTodayExpenses(){
+  try {
+    const resp = await fetch(RELAY_URL + "?action=expenses", {
+      method: "GET",
+      headers: { "X-App-Secret": RELAY_APP_SECRET },
+    });
+    const data = await resp.json();
+    if (!data || !data.ok || !Array.isArray(data.expenses)) return;
+    let added = false;
+    data.expenses.forEach(e => {
+      if (!e || !e.id || autoExpenseIds.has(e.id)) return;
+      autoExpenseIds.add(e.id);
+      expenses.push({
+        name: e.by ? `${e.name} — ${e.by}` : (e.name || ""),
+        amount: e.amount || 0,
+        auto: true,
+        id: e.id,
+      });
+      added = true;
+    });
+    if (added){
+      renderExpenses();
+      recalcClose();
+    }
+  } catch (e) {
+    // тихо игнорируем — трату всё равно можно добавить вручную
+  }
+}
+
 function renderExpenses(){
   const container = document.getElementById("expense-rows");
   container.innerHTML = "";
@@ -1091,7 +1165,7 @@ function renderExpenses(){
     row.className = "expense-row";
     row.innerHTML = `
       <div class="input-col">
-        <div class="input-col-label">На что потратили</div>
+        <div class="input-col-label">На что потратили${exp.auto ? ' <span style="color:var(--amber);">· уже в чате</span>' : ""}</div>
         <input class="text-input" type="text" placeholder="Лёд, такси и т.п." data-role="exp-name" value="${exp.name}">
       </div>
       <div class="input-col amount-col">
@@ -1162,6 +1236,7 @@ function refreshCloseHint(){
 document.getElementById("go-close").addEventListener("click", () => {
   document.getElementById("close-meta").textContent = formatDateRu() + " · " + nowTimeStr();
   showScreen("screen-close");
+  fetchTodayExpenses();
 });
 document.getElementById("back-from-close").addEventListener("click", () => showScreen("screen-menu"));
 document.getElementById("pos-tips-suggest-btn").addEventListener("click", () => {
@@ -1273,6 +1348,61 @@ ${Math.abs(diff) < 0.01 ? "✅ Разница: 0" : `⚠️ Разница: ${(d
 
 document.getElementById("go-cash-menu").addEventListener("click", () => showScreen("screen-menu"));
 document.getElementById("back-from-menu").addEventListener("click", () => showScreen("screen-root"));
+
+/* ---------- БЫСТРАЯ ЗАПИСЬ ТРАТЫ ВО ВРЕМЯ СМЕНЫ ---------- */
+let expenseQuickSelected = new Set();
+
+function expenseQuickReady(){
+  return document.getElementById("expense-quick-name").value.trim() !== ""
+    && num(document.getElementById("expense-quick-amount").value) > 0;
+}
+function refreshExpenseQuickHint(){
+  const btn = document.getElementById("expense-quick-submit");
+  const hint = document.getElementById("expense-quick-hint");
+  const ready = expenseQuickReady();
+  btn.classList.toggle("ready", ready);
+  hint.textContent = ready ? "Готово к отправке" : "Укажите, на что и сколько";
+}
+
+document.getElementById("go-expense-quick").addEventListener("click", () => {
+  document.getElementById("expense-quick-meta").textContent = formatDateRu() + " · " + nowTimeStr();
+  document.getElementById("expense-quick-name").value = "";
+  document.getElementById("expense-quick-amount").value = "";
+  showScreen("screen-expense-quick");
+  refreshExpenseQuickHint();
+});
+document.getElementById("back-from-expense-quick").addEventListener("click", () => showScreen("screen-root"));
+renderChips("expense-quick-employee-chips", expenseQuickSelected, refreshExpenseQuickHint);
+setupExtraToggle("expense-quick", refreshExpenseQuickHint);
+document.getElementById("expense-quick-name").addEventListener("input", refreshExpenseQuickHint);
+document.getElementById("expense-quick-amount").addEventListener("input", refreshExpenseQuickHint);
+
+document.getElementById("expense-quick-submit").addEventListener("click", () => {
+  if (!expenseQuickReady()){
+    const hint = document.getElementById("expense-quick-hint");
+    hint.textContent = "Укажи, на что потратили, и сумму больше нуля";
+    hint.classList.add("angry");
+    const btn = document.getElementById("expense-quick-submit");
+    btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
+    return;
+  }
+  const name = document.getElementById("expense-quick-name").value.trim();
+  const amount = num(document.getElementById("expense-quick-amount").value);
+  const names = getNames(expenseQuickSelected, "expense-quick").join(", ");
+
+  const text =
+`rambling :
+💸 Трата за смену — Rambling
+${name}: ${fmt(amount)}
+${names ? "Кто потратил: " + names + "\n" : ""}Дата: ${formatDateRu()}
+Время: ${nowTimeStr()}`;
+
+  document.getElementById("done-badge").textContent = "💸";
+  document.getElementById("done-title").textContent = "Трата записана";
+  document.getElementById("msg-preview").textContent = text;
+  showScreen("screen-done");
+  sendReportToTelegram(text, "expense", { name, amount, by: names });
+});
 
 /* ---------- КОКТЕЙЛИ (справочник техничек) ---------- */
 // Только для чтения бартендерами — ни закупки, ни отправки в Telegram, просто рецепт под рукой.
