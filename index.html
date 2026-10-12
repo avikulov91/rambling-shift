@@ -12084,12 +12084,23 @@ function parseScheduleText(text){
       }
     }
 
-    if (currentMonth === null) return;
+    // Если до первой строки с днём так и не встретилась строка с названием месяца (например,
+    // при вставке скопировали не с самого начала и потеряли заголовок) — не отбрасываем весь
+    // график, а считаем, что это ближайший следующий месяц: именно для него и генерируется
+    // форма-промт, так что в 99% случаев это и есть правильное предположение.
+    if (currentMonth === null){
+      const guess = nextMonthInfo();
+      currentMonth = guess.month;
+      currentYear = guess.year;
+    }
 
     const headMatch = line.match(/^(\d{1,2})\s+/);
     if (!headMatch) return;
     const day = parseInt(headMatch[1], 10);
-    if (!day || day < 1 || day > 31) return;
+    // Проверяем не просто "1..31", а реальное количество дней в этом месяце — иначе, например,
+    // "31" для ноября (в нём только 30 дней) превратится в несуществующую дату.
+    const daysInThisMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    if (!day || day < 1 || day > daysInThisMonth) return;
 
     const dashMatch = line.slice(headMatch[0].length).match(/[—–-]\s*(.+)$/);
     if (!dashMatch) return;
