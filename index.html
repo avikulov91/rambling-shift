@@ -222,7 +222,11 @@
     60%{transform:translateX(-4px);} 80%{transform:translateX(4px);}
   }
 
-  #screen-done{ justify-content:center; align-items:center; text-align:center; padding: 40px 28px; }
+  /* justify-content:flex-start (не center) специально — иначе когда содержимое (например,
+     длинный текст промта в msg-preview) выше экрана, центрирование во флексбоксе "выталкивает"
+     верх карточки за пределы видимой области, и его физически нельзя прокрутить обратно —
+     известная особенность центрирования флекс-контейнеров при переполнении. */
+  #screen-done{ justify-content:flex-start; align-items:center; text-align:center; padding: 40px 28px; }
   .done-badge{ font-size:48px; margin-bottom:10px; }
   .done-title{ font-family: 'Anton', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size:22px; font-weight:400; letter-spacing:0.3px; text-transform:uppercase; margin-bottom:18px; }
   .send-status{
@@ -369,7 +373,87 @@
       <div class="top-bar-title">📅 График работы</div>
     </div>
     <div class="form-body">
+      <button class="add-expense-btn" id="go-schedule-upload" type="button" style="margin-bottom:10px;">✏️ Обновить график</button>
+      <button class="add-expense-btn" id="go-schedule-swap" type="button" style="margin-bottom:14px;">🔄 Замена / соло смена</button>
       <div id="schedule-list"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN: замена бармена на смену или соло-смена -->
+  <div class="screen" id="screen-schedule-swap">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-schedule-swap" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">🔄 Замена / соло смена</div>
+    </div>
+    <div class="form-body">
+
+      <div class="field-block">
+        <div class="field-label">Дата смены</div>
+        <select class="text-input" id="swap-date-select"></select>
+      </div>
+
+      <div class="field-block" id="swap-who-wrap">
+        <div class="field-label">Кого меняем / убираем со смены</div>
+        <div class="chip-row" id="swap-who-chips"></div>
+      </div>
+
+      <div class="field-block" id="swap-mode-block" style="display:none;">
+        <div class="field-label">Что делаем</div>
+        <div class="chip-row">
+          <button class="chip" type="button" id="swap-mode-replace">🔁 Заменить на другого</button>
+          <button class="chip" type="button" id="swap-mode-solo">🧍 Соло смена (работает один)</button>
+        </div>
+      </div>
+
+      <div class="field-block" id="swap-replacement-block" style="display:none;">
+        <div class="field-label">На кого меняем</div>
+        <div class="chip-row" id="swap-replacement-chips"></div>
+        <button class="add-expense-btn" id="swap-toggle-extra" type="button" style="margin-top:10px;">+ Другой бармен</button>
+        <div id="swap-extra-wrap" style="display:none; margin-top:10px;">
+          <input class="text-input" type="text" id="swap-extra-name" placeholder="Имя сменного бармена">
+        </div>
+      </div>
+
+    </div>
+    <div class="bottom-bar">
+      <div class="finish-hint" id="swap-hint">Выберите дату и кого меняем</div>
+      <button class="finish-btn" id="swap-submit">🔄 Подтвердить</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: paste/upload schedule -->
+  <div class="screen" id="screen-schedule-upload">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-schedule-upload" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">✏️ Обновить график</div>
+    </div>
+    <div class="form-body">
+
+      <div class="field-block">
+        <button class="add-expense-btn" id="go-schedule-form" type="button">📋 Скачать форму графика</button>
+        <div class="field-hint" style="margin-top:8px;">Отправит в чат Rambling, в тему «График», готовый промт для ИИ. Скопируй его оттуда, отправь нейросети вместе с реальными данными по сменам, а то, что ИИ сформирует в ответ, вставь ниже в поле «Вставь сюда готовый график».</div>
+      </div>
+
+      <div class="field-block">
+        <div class="field-label">Кто загружает</div>
+        <div class="chip-row" id="schedule-upload-employee-chips"></div>
+        <button class="add-expense-btn" id="schedule-upload-toggle-extra" type="button" style="margin-top:10px;">+ Дополнительный бармен</button>
+        <div id="schedule-upload-extra-wrap" style="display:none; margin-top:10px;">
+          <input class="text-input" type="text" id="schedule-upload-extra-name" placeholder="Имя дополнительного бармена">
+        </div>
+      </div>
+
+      <div class="field-block">
+        <div class="field-label">Вставь сюда готовый график (как прислал ИИ)</div>
+        <textarea class="text-input" id="schedule-upload-text" rows="14" placeholder="Сентябрь&#10;&#10;1 вт — Саша, Таня (Коля выходной)&#10;2 ср — Саша, Коля (Таня выходной)" style="resize:vertical; font-family: monospace; font-size:13px;"></textarea>
+      </div>
+
+      <div class="field-hint" id="schedule-upload-preview">Вставь текст графика — здесь появится, сколько дней распознано</div>
+
+    </div>
+    <div class="bottom-bar">
+      <div class="finish-hint" id="schedule-upload-hint">Вставьте график для загрузки</div>
+      <button class="finish-btn" id="schedule-upload-submit">📅 Загрузить график</button>
     </div>
   </div>
 
@@ -795,7 +879,7 @@
       <div class="field-block">
         <div class="field-label">Касса на начало смены</div>
         <input class="num-input" type="number" inputmode="decimal" id="close-opening-cash" placeholder="0">
-        <div class="field-hint">Сумма, с которой открывали смену — посмотри в сообщении об открытии</div>
+        <div class="field-hint" id="close-opening-cash-hint">Сумма, с которой открывали смену — посмотри в сообщении об открытии</div>
         <button type="button" class="calc-toggle-btn" id="close-cash-calc-toggle">🧮 Посчитать по купюрам</button>
         <div class="calc-panel" id="close-cash-calc-panel" style="display:none;">
           <div class="calc-grid" id="close-cash-calc-grid"></div>
@@ -904,6 +988,10 @@
 
 <script>
 const EMPLOYEES = ["Александр", "Николай", "Татьяна"];
+// Раньше график вели под короткими именами (Саша/Коля/Таня), но теперь используем полные
+// имена и там тоже — единый список для всего, что связано с графиком (форма-промт для ИИ,
+// замена/соло-смена), чтобы не плодить одного и того же человека под двумя разными именами.
+const SCHEDULE_STAFF_NAMES = EMPLOYEES;
 const CURRENCY = "₾";
 const MAX_SELECT = EMPLOYEES.length; // можно выбрать всех бартендеров из списка сразу (сейчас их трое)
 
@@ -960,6 +1048,12 @@ function fmt(n){
 function showScreen(id){
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
+  // Без этого при переключении экранов сохраняется прежняя прокрутка страницы —
+  // если предыдущий экран был длинным и проскроллен вниз, новый экран открывается
+  // в том же положении, из-за чего не видно его верх (заголовок, иконка и т.д.).
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
 }
 
 /* ---------- калькулятор подсчёта наличных по купюрам/монетам ---------- */
@@ -1112,7 +1206,9 @@ document.getElementById("open-submit").addEventListener("click", () => {
   document.getElementById("done-title").textContent = "Касса открыта";
   document.getElementById("msg-preview").textContent = text;
   showScreen("screen-done");
-  sendReportToTelegram(text, "cash");
+  // phase:"open" — чтобы Worker сохранил эту сумму в KV и подставил её при закрытии кассы
+  // (см. fetchTodayOpenCash) — так не нужно будет искать сообщение об открытии вручную.
+  sendReportToTelegram(text, "cash", { phase: "open", amount: cash });
 });
 
 /* ---------- CLOSE SHIFT ---------- */
@@ -1154,6 +1250,29 @@ async function fetchTodayExpenses(){
     }
   } catch (e) {
     // тихо игнорируем — трату всё равно можно добавить вручную
+  }
+}
+
+// Подтягивает сумму, с которой сегодня открывали кассу (сохранённую Worker'ом при открытии),
+// и подставляет её в поле «Касса на начало смены» при закрытии — просто как готовое значение,
+// которое по-прежнему можно поправить вручную, если оно не подходит (например, кассу открывали
+// повторно или сумма изменилась).
+async function fetchTodayOpenCash(){
+  try {
+    const resp = await fetch(RELAY_URL + "?action=open_cash", {
+      method: "GET",
+      headers: { "X-App-Secret": RELAY_APP_SECRET },
+    });
+    const data = await resp.json();
+    if (!data || !data.ok || data.amount === null || data.amount === undefined) return;
+    const field = document.getElementById("close-opening-cash");
+    if (field.value !== "") return; // бармен уже сам что-то ввёл — не затираем
+    field.value = data.amount;
+    document.getElementById("close-opening-cash-hint").textContent = "Подставлено автоматически из открытия кассы — можно изменить";
+    recalcClose();
+    refreshCloseHint();
+  } catch (e) {
+    // тихо игнорируем — сумму всё равно можно ввести вручную
   }
 }
 
@@ -1237,6 +1356,7 @@ document.getElementById("go-close").addEventListener("click", () => {
   document.getElementById("close-meta").textContent = formatDateRu() + " · " + nowTimeStr();
   showScreen("screen-close");
   fetchTodayExpenses();
+  fetchTodayOpenCash();
 });
 document.getElementById("back-from-close").addEventListener("click", () => showScreen("screen-menu"));
 document.getElementById("pos-tips-suggest-btn").addEventListener("click", () => {
@@ -11717,19 +11837,47 @@ function isWeekendDate(dateStr){
   return dow === 0 || dow === 6;
 }
 
+// Цветная "таблетка" с личным выходным — чтобы не путать с календарными выходными (сб/вс)
+// и чтобы было видно с первого взгляда, а не искать мелкий серый текст.
+function renderOffBadge(name){
+  if (!name) return "";
+  return `<div style="margin-top:8px; display:inline-block; background: var(--red-dim); color: var(--red); border-radius:999px; padding:4px 12px; font-size:13px; font-weight:700;">🧍 ${name} — выходной</div>`;
+}
+
 function renderSchedule(){
   const container = document.getElementById("schedule-list");
   container.innerHTML = "";
-  if (SHIFT_SCHEDULE.length === 0){
-    container.innerHTML = `<div class="field-hint" style="padding:10px 0;">График пока не добавлен — пришли даты и кто работает, и я его заполню.</div>`;
+  const today = todayDateStr();
+  const sorted = [...scheduleEntries].sort((a, b) => a.date.localeCompare(b.date));
+
+  // Закреплённая карточка "Сегодня" сверху (с мини-календарём внутри) — показывается всегда,
+  // даже если график на сегодня ещё не загружен, просто для ориентира по дате.
+  const todayEntry = sorted.find(e => e.date === today);
+  const summary = document.createElement("div");
+  summary.className = "sum-card";
+  summary.style.cssText = "margin-bottom:16px; border:2px solid var(--red); background: var(--surface-2);";
+  summary.innerHTML = `
+    <div class="sum-row" style="margin-bottom:6px;">
+      <span class="label" style="font-weight:800; color: var(--red);">📍 Сегодня, <span style="text-transform:capitalize;">${formatScheduleDate(today)}</span></span>
+    </div>
+    ${todayEntry ? `
+      <div class="sum-row"><span class="value" style="text-align:left; color: var(--text);">👥 Работают: ${todayEntry.staff.join(", ") || "—"}</span></div>
+      ${renderOffBadge(todayEntry.off)}
+    ` : `<div class="field-hint" style="margin-top:2px;">График на сегодня ещё не загружен</div>`}
+  `;
+  container.appendChild(summary);
+
+  if (scheduleEntries.length === 0){
+    container.insertAdjacentHTML("beforeend", `<div class="field-hint" style="padding:10px 0;">График пока не добавлен — пришли даты и кто работает, и я его заполню.</div>`);
     return;
   }
-  const today = todayDateStr();
-  const sorted = [...SHIFT_SCHEDULE].sort((a, b) => a.date.localeCompare(b.date));
+
   sorted.forEach(entry => {
+    const [y, m, d] = entry.date.split("-").map(Number);
+    const dow = new Date(y, m - 1, d).getDay(); // 0 = воскресенье ... 6 = суббота
     const isPast = entry.date < today;
     const isToday = entry.date === today;
-    const isCalendarWeekend = isWeekendDate(entry.date);
+    const isCalendarWeekend = dow === 0 || dow === 6;
     const card = document.createElement("div");
     card.className = "sum-card";
     card.style.marginBottom = "10px";
@@ -11738,26 +11886,500 @@ function renderSchedule(){
       card.style.borderLeft = "4px solid var(--amber)";
     }
     if (isPast) card.style.opacity = "0.45";
-    if (isToday) card.style.border = "1px solid var(--red)";
+    // "Сегодня" подсвечивается заметнее и перекрывает подсветку календарных выходных —
+    // чтобы сегодняшний день всегда выделялся сильнее всего, даже если это суббота/воскресенье.
+    if (isToday){
+      card.style.background = "var(--red-dim)";
+      card.style.border = "2px solid var(--red)";
+      card.style.borderLeft = "2px solid var(--red)";
+    }
     const todayBadge = isToday ? ` <span style="color: var(--red); font-weight:800;">· сегодня</span>` : "";
-    const weekendBadge = isCalendarWeekend ? ` <span style="color: var(--amber); font-weight:800;">· 📅 календарные выходные</span>` : "";
-    const offLine = entry.off ? `<div class="field-hint" style="margin-top:2px;">${entry.off} — выходной</div>` : "";
+    const weekendBadge = isCalendarWeekend ? ` <span style="color: var(--amber); font-weight:800;">· 📅 календарный выходной</span>` : "";
     card.innerHTML = `
       <div class="sum-row" style="margin-bottom:6px;">
         <span class="label" style="font-weight:800; color: var(--text);"><span style="text-transform:capitalize;">${formatScheduleDate(entry.date)}</span>${todayBadge}${weekendBadge}</span>
       </div>
-      <div class="sum-row"><span class="value" style="text-align:left; color: var(--text);">${entry.staff.join(", ")}</span></div>
-      ${offLine}
+      <div class="sum-row"><span class="value" style="text-align:left; color: var(--text);">👥 ${entry.staff.join(", ") || "—"}</span></div>
+      ${renderOffBadge(entry.off)}
+      <div><button class="chip" type="button" data-swap-date="${entry.date}" style="margin-top:10px; font-size:13px; padding:6px 12px;">🔄 Замена</button></div>
     `;
     container.appendChild(card);
+
+    // Чёткая граница конца недели — сразу после каждого календарного воскресенья,
+    // чтобы было видно, где заканчивается одна неделя и начинается следующая.
+    if (dow === 0){
+      const weekEndLabel = document.createElement("div");
+      weekEndLabel.style.cssText = "text-align:center; color: var(--text-dim); font-size:11px; letter-spacing:1.5px; text-transform:uppercase; margin:16px 0 4px;";
+      weekEndLabel.textContent = "конец недели";
+      container.appendChild(weekEndLabel);
+      const hr = document.createElement("hr");
+      hr.className = "section-divider";
+      hr.style.margin = "0 0 10px";
+      container.appendChild(hr);
+    }
   });
 }
+
+// Клик по «🔄 Замена» прямо на карточке дня — сразу открывает замену/соло-смену на эту дату,
+// без необходимости отдельно искать её в выпадающем списке.
+document.getElementById("schedule-list").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-swap-date]");
+  if (!btn) return;
+  openScheduleSwapForDate(btn.dataset.swapDate);
+});
 
 document.getElementById("go-schedule").addEventListener("click", () => {
   renderSchedule();
   showScreen("screen-schedule");
+  fetchStoredSchedule();
 });
 document.getElementById("back-from-schedule").addEventListener("click", () => showScreen("screen-root"));
+
+/* ---------- ЗАГРУЗКА ГРАФИКА БАРМЕНАМИ (вставка текста из ИИ) ---------- */
+// SHIFT_SCHEDULE — "сид": то, что зашито в код на момент последнего обновления файла.
+// scheduleEntries — живые данные: сид + всё, что бармены загрузили через приложение
+// (хранится в RAMBLING_KV на Worker'е, общее для всех).
+let scheduleEntries = [...SHIFT_SCHEDULE];
+let scheduleUploadSelected = new Set();
+let lastParsedScheduleEntries = [];
+
+function mergeScheduleEntries(base, overrides){
+  const map = new Map();
+  base.forEach(e => { if (e && e.date) map.set(e.date, e); });
+  overrides.forEach(e => { if (e && e.date) map.set(e.date, e); });
+  return Array.from(map.values());
+}
+
+// Подтягивает график, который бармены уже загрузили через приложение (общий для всех),
+// и домешивает его поверх того, что зашито в коде.
+async function fetchStoredSchedule(){
+  try {
+    const resp = await fetch(RELAY_URL + "?action=schedule", {
+      method: "GET",
+      headers: { "X-App-Secret": RELAY_APP_SECRET },
+    });
+    const data = await resp.json();
+    if (data && data.ok && Array.isArray(data.entries) && data.entries.length){
+      scheduleEntries = mergeScheduleEntries(SHIFT_SCHEDULE, data.entries);
+      renderSchedule();
+    }
+  } catch (e) {
+    // тихо игнорируем — покажем то, что уже есть локально
+  }
+}
+
+const MONTH_NAMES_RU_NOM = ["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
+
+// Следующий календарный месяц относительно сегодня — график обычно готовят заранее, на месяц вперёд.
+function nextMonthInfo(){
+  const d = new Date();
+  let month = d.getMonth() + 1; // 0-11
+  let year = d.getFullYear();
+  if (month > 11){ month = 0; year += 1; }
+  return { month, year };
+}
+
+// Сокращения дней недели в порядке Date.getDay() (0 = воскресенье).
+const WEEKDAY_SHORT_RU = ["вс","пн","вт","ср","чт","пт","сб"];
+
+// Формирует сообщение-промт для ИИ с точным форматом и правилами графика. В сообщении —
+// только сам промт (без оберток вроде "скопируй это") — его можно сразу копировать целиком
+// и отправлять нейросети. Отправляется в чат Rambling, тема «График».
+function buildScheduleFormPrompt(){
+  const { month, year } = nextMonthInfo();
+  const monthWord = MONTH_NAMES_RU_NOM[month];        // именительный: "ноябрь"
+  const monthName = monthWord.charAt(0).toUpperCase() + monthWord.slice(1);
+  const monthGenitive = MONTH_NAMES_RU[month];        // родительный: "ноября" (для "15 ноября")
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const employeesList = SCHEDULE_STAFF_NAMES.join(", ");
+
+  // Пример на первые ~9 дней месяца — с настоящими днями недели этого месяца и пустой
+  // строкой после каждого воскресенья, чтобы правило было видно на деле, а не только в тексте.
+  const exampleDaysCount = Math.min(9, daysInMonth);
+  const exampleLines = [];
+  for (let day = 1; day <= exampleDaysCount; day++){
+    const dow = new Date(year, month, day).getDay();
+    exampleLines.push(`${day} ${WEEKDAY_SHORT_RU[dow]} — Имя1, Имя2 (Имя3 выходной)`);
+    if (dow === 0) exampleLines.push("");
+  }
+  if (exampleDaysCount < daysInMonth){
+    exampleLines.push("...и так далее до конца месяца, без пропусков дней.");
+  }
+  const exampleBlock = exampleLines.join("\n");
+
+  return `Ты формируешь график смен бара Rambling на ${monthName} ${year} (всего дней в месяце: ${daysInMonth}).
+
+СОТРУДНИКИ: ${employeesList} (если нужен внештатный человек на замену — впиши его имя как есть).
+
+ПРАВИЛА СОСТАВЛЕНИЯ ГРАФИКА:
+
+Обязательные правила
+1. Минимум два человека в смене — никто не работает в одиночку. На каждую дату должно быть не менее двух сотрудников.
+2. Не более четырёх смен подряд — после четырёх последовательных рабочих смен сотруднику ставится выходной. По возможности распределяй смены так, чтобы не доводить до этого предела.
+3. Справедливое распределение смен — количество смен и рабочих часов у каждого распределяется максимально равномерно.
+4. Выходные учитываются заранее — согласованные ниже выходные, отпуска и отгулы учитываются в первую очередь, а не исправляются задним числом.
+5. График составляется на фиксированный период — сразу на весь месяц, без пропущенных дней.
+
+Как распределять смены
+— Сначала закрой все даты минимум двумя сотрудниками.
+— Затем распредели выходные и проверь, чтобы никто не работал больше четырёх смен подряд.
+— Сравни количество смен и часов у каждого сотрудника.
+— Проверь пятницы, субботы и другие загруженные дни.
+— Проверь, чтобы одни и те же люди не получали постоянно все выходные или все самые загруженные дни.
+
+ЗАРАНЕЕ СОГЛАСОВАННЫЕ ВЫХОДНЫЕ, ОТПУСКА И ОТГУЛЫ (допиши сюда, например):
+— Татьяна выходная 15 ${monthGenitive}
+— Николай в отпуске с 20 по 25 ${monthGenitive}
+— Александр отгул 3 ${monthGenitive}
+— если ограничений нет у кого-то — просто не упоминай его здесь
+
+ФОРМАТ ОТВЕТА (соблюдать строго, без пояснений, заголовков или итогов — в ответе только сам график):
+
+${monthName} ${year}
+
+${exampleBlock}
+
+Правила формата:
+— первая строка — название месяца и год;
+— для каждого дня месяца отдельная строка, ни один день не пропускать;
+— в строке: номер дня, пробел, сокращение дня недели, пробел, тире «—», пробел, затем два имени через запятую, затем в круглых скобках — имя того, кто выходной, и слово «выходной» после него;
+— после каждого воскресенья — одна пустая строка, чтобы отделить неделю от следующей;
+— больше никакого текста до или после списка дней.
+`;
+}
+
+// Разбирает график, присланный в формате вида:
+//   Сентябрь
+//
+//   1 вт — Саша, Таня (Коля выходной)
+//   2 ср — Саша, Коля (Таня выходной)
+// Строки-разделители ("____"), пустые строки и отдельные заметки (без номера дня в начале)
+// просто игнорируются.
+function parseScheduleText(text){
+  const lines = (text || "").split("\n");
+  const entries = [];
+  let currentMonth = null; // 0-11
+  let currentYear = null;
+  const today = new Date();
+
+  lines.forEach(raw => {
+    const line = raw.trim();
+    if (!line) return;
+
+    // заголовок месяца: "Сентябрь" или "Сентябрь 2026"
+    const headerMatch = line.match(/^([А-Яа-яёЁ]+)\s*(\d{4})?$/);
+    if (headerMatch){
+      const idx = MONTH_NAMES_RU_NOM.indexOf(headerMatch[1].toLowerCase());
+      if (idx !== -1){
+        currentMonth = idx;
+        if (headerMatch[2]){
+          currentYear = parseInt(headerMatch[2], 10);
+        } else {
+          let yr = today.getFullYear();
+          const probe = new Date(yr, idx, 1);
+          if ((today - probe) / 86400000 > 20) yr += 1; // этот месяц в этом году уже прошёл — считаем, что про следующий год
+          currentYear = yr;
+        }
+        return;
+      }
+    }
+
+    if (currentMonth === null) return;
+
+    const headMatch = line.match(/^(\d{1,2})\s+/);
+    if (!headMatch) return;
+    const day = parseInt(headMatch[1], 10);
+    if (!day || day < 1 || day > 31) return;
+
+    const dashMatch = line.slice(headMatch[0].length).match(/[—–-]\s*(.+)$/);
+    if (!dashMatch) return;
+    const rest = dashMatch[1].trim();
+
+    let staffPart = rest;
+    let off = "";
+    const parenMatch = rest.match(/^(.*?)\s*\(([^)]*)\)\s*$/);
+    if (parenMatch){
+      staffPart = parenMatch[1].trim();
+      off = parenMatch[2].replace(/выходной\.?/i, "").trim();
+    }
+
+    const staff = staffPart.split(",").map(s => s.trim()).filter(Boolean);
+    if (staff.length === 0) return;
+
+    const dateStr = `${currentYear}-${pad(currentMonth + 1)}-${pad(day)}`;
+    entries.push({ date: dateStr, staff, off: off || undefined });
+  });
+
+  return entries;
+}
+
+function updateScheduleUploadPreview(){
+  const text = document.getElementById("schedule-upload-text").value;
+  const previewEl = document.getElementById("schedule-upload-preview");
+  const hint = document.getElementById("schedule-upload-hint");
+  const btn = document.getElementById("schedule-upload-submit");
+  lastParsedScheduleEntries = parseScheduleText(text);
+
+  if (lastParsedScheduleEntries.length === 0){
+    previewEl.textContent = text.trim()
+      ? "Не удалось распознать ни одного дня — проверь формат."
+      : "Вставь текст графика — здесь появится, сколько дней распознано";
+    btn.classList.remove("ready");
+    hint.textContent = "Вставьте график для загрузки";
+    return;
+  }
+
+  const sorted = [...lastParsedScheduleEntries].sort((a, b) => a.date.localeCompare(b.date));
+  previewEl.textContent = `Распознано дней: ${sorted.length} (с ${formatScheduleDate(sorted[0].date)} по ${formatScheduleDate(sorted[sorted.length - 1].date)})`;
+  btn.classList.add("ready");
+  hint.textContent = "Готово к загрузке";
+}
+
+document.getElementById("go-schedule-upload").addEventListener("click", () => {
+  document.getElementById("schedule-upload-text").value = "";
+  updateScheduleUploadPreview();
+  showScreen("screen-schedule-upload");
+});
+document.getElementById("back-from-schedule-upload").addEventListener("click", () => showScreen("screen-schedule"));
+renderChips("schedule-upload-employee-chips", scheduleUploadSelected, () => {});
+setupExtraToggle("schedule-upload", () => {});
+document.getElementById("schedule-upload-text").addEventListener("input", updateScheduleUploadPreview);
+
+document.getElementById("go-schedule-form").addEventListener("click", () => {
+  const text = buildScheduleFormPrompt();
+  document.getElementById("done-badge").textContent = "📋";
+  document.getElementById("done-title").textContent = "Форма отправлена в чат";
+  document.getElementById("msg-preview").textContent = text;
+  showScreen("screen-done");
+  sendReportToTelegram(text, "schedule_form");
+});
+
+document.getElementById("schedule-upload-submit").addEventListener("click", () => {
+  if (lastParsedScheduleEntries.length === 0){
+    const hint = document.getElementById("schedule-upload-hint");
+    hint.textContent = "Сначала вставь текст графика";
+    hint.classList.add("angry");
+    const btn = document.getElementById("schedule-upload-submit");
+    btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
+    return;
+  }
+
+  const names = getNames(scheduleUploadSelected, "schedule-upload").join(", ");
+  const sorted = [...lastParsedScheduleEntries].sort((a, b) => a.date.localeCompare(b.date));
+  const rangeText = `с ${formatScheduleDate(sorted[0].date)} по ${formatScheduleDate(sorted[sorted.length - 1].date)}`;
+
+  scheduleEntries = mergeScheduleEntries(scheduleEntries, lastParsedScheduleEntries);
+  renderSchedule();
+
+  const text =
+`rambling :
+📅 График обновлён — Rambling
+Загружено дней: ${sorted.length} (${rangeText})
+${names ? "Кто загрузил: " + names + "\n" : ""}Дата: ${formatDateRu()}
+Время: ${nowTimeStr()}`;
+
+  document.getElementById("done-badge").textContent = "📅";
+  document.getElementById("done-title").textContent = "График загружен";
+  document.getElementById("msg-preview").textContent = text;
+  showScreen("screen-done");
+  sendReportToTelegram(text, "schedule_update", { entries: lastParsedScheduleEntries, by: names });
+});
+
+/* ---------- ЗАМЕНА НА СМЕНУ / СОЛО-СМЕНА ---------- */
+// Правит ровно один день уже загруженного графика: либо меняет одного из работающих на
+// другого (постоянного или внештатного), либо убирает его совсем — тогда смена становится
+// соло (работает один оставшийся). Отправляется тем же type "schedule_update", что и обычная
+// загрузка графика — Worker просто сольёт этот один день в общий график в KV.
+let swapSelectedWho = null;
+let swapMode = null; // "replace" | "solo"
+let swapReplacementSelected = null;
+
+// Все даты графика (и прошлые, и будущие) — замену/соло-смену можно оформить на любой уже
+// загруженный день, не только на предстоящий.
+function getAllScheduleDatesSorted(){
+  return [...scheduleEntries].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function currentSwapEntry(){
+  const date = document.getElementById("swap-date-select").value;
+  return scheduleEntries.find(e => e.date === date);
+}
+
+function populateSwapDateSelect(presetDate){
+  const select = document.getElementById("swap-date-select");
+  select.innerHTML = "";
+  const all = getAllScheduleDatesSorted();
+  if (all.length === 0){
+    select.innerHTML = `<option value="">— нет загруженного графика —</option>`;
+    select.disabled = true;
+    document.getElementById("swap-hint").textContent = "Сначала загрузи график («Обновить график»), потом возвращайся сюда.";
+    return;
+  }
+  select.disabled = false;
+  all.forEach(e => {
+    const opt = document.createElement("option");
+    opt.value = e.date;
+    opt.textContent = `${formatScheduleDate(e.date)} — ${e.staff.join(", ")}`;
+    select.appendChild(opt);
+  });
+  if (presetDate && all.some(e => e.date === presetDate)){
+    select.value = presetDate;
+  }
+}
+
+// Открывает экран замены/соло-смены сразу на нужной дате (вызывается с кнопки «🔄 Замена»
+// прямо на карточке дня в самом графике) — не нужно отдельно искать дату в списке.
+function openScheduleSwapForDate(date){
+  populateSwapDateSelect(date);
+  renderSwapWhoChips();
+  renderSwapReplacementChips();
+  showScreen("screen-schedule-swap");
+}
+
+function renderSwapWhoChips(){
+  const entry = currentSwapEntry();
+  const container = document.getElementById("swap-who-chips");
+  container.innerHTML = "";
+  swapSelectedWho = null;
+  swapMode = null;
+  swapReplacementSelected = null;
+  document.getElementById("swap-mode-block").style.display = "none";
+  document.getElementById("swap-replacement-block").style.display = "none";
+  document.getElementById("swap-mode-replace").classList.remove("selected");
+  document.getElementById("swap-mode-solo").classList.remove("selected");
+  if (!entry) { updateSwapHint(); return; }
+  entry.staff.forEach(name => {
+    const chip = document.createElement("button");
+    chip.className = "chip";
+    chip.type = "button";
+    chip.textContent = name;
+    chip.addEventListener("click", () => {
+      swapSelectedWho = name;
+      [...container.children].forEach(c => c.classList.toggle("selected", c === chip));
+      swapMode = null;
+      swapReplacementSelected = null;
+      document.getElementById("swap-mode-block").style.display = "block";
+      document.getElementById("swap-replacement-block").style.display = "none";
+      document.getElementById("swap-mode-replace").classList.remove("selected");
+      document.getElementById("swap-mode-solo").classList.remove("selected");
+      updateSwapHint();
+    });
+    container.appendChild(chip);
+  });
+  updateSwapHint();
+}
+
+function renderSwapReplacementChips(){
+  const entry = currentSwapEntry();
+  const container = document.getElementById("swap-replacement-chips");
+  container.innerHTML = "";
+  if (!entry) return;
+  const exclude = new Set(entry.staff);
+  SCHEDULE_STAFF_NAMES.filter(n => !exclude.has(n)).forEach(name => {
+    const chip = document.createElement("button");
+    chip.className = "chip";
+    chip.type = "button";
+    chip.textContent = name;
+    chip.addEventListener("click", () => {
+      swapReplacementSelected = name;
+      document.getElementById("swap-extra-name").value = "";
+      document.getElementById("swap-extra-wrap").style.display = "none";
+      document.getElementById("swap-toggle-extra").textContent = "+ Другой бармен";
+      [...container.children].forEach(c => c.classList.toggle("selected", c === chip));
+      updateSwapHint();
+    });
+    container.appendChild(chip);
+  });
+}
+
+function swapReady(){
+  if (!swapSelectedWho || !swapMode) return false;
+  if (swapMode === "replace"){
+    return !!(swapReplacementSelected || getExtraName("swap"));
+  }
+  return true;
+}
+
+function updateSwapHint(){
+  const hint = document.getElementById("swap-hint");
+  const btn = document.getElementById("swap-submit");
+  if (!currentSwapEntry()){
+    btn.classList.remove("ready");
+    return;
+  }
+  const ready = swapReady();
+  btn.classList.toggle("ready", ready);
+  hint.textContent = ready ? "Готово к отправке" : "Выберите, кого меняем, и что делаем";
+}
+
+document.getElementById("go-schedule-swap").addEventListener("click", () => {
+  openScheduleSwapForDate(null);
+});
+document.getElementById("back-from-schedule-swap").addEventListener("click", () => showScreen("screen-schedule"));
+document.getElementById("swap-date-select").addEventListener("change", () => {
+  renderSwapWhoChips();
+  renderSwapReplacementChips();
+});
+document.getElementById("swap-mode-replace").addEventListener("click", () => {
+  swapMode = "replace";
+  document.getElementById("swap-mode-replace").classList.add("selected");
+  document.getElementById("swap-mode-solo").classList.remove("selected");
+  document.getElementById("swap-replacement-block").style.display = "block";
+  updateSwapHint();
+});
+document.getElementById("swap-mode-solo").addEventListener("click", () => {
+  swapMode = "solo";
+  document.getElementById("swap-mode-solo").classList.add("selected");
+  document.getElementById("swap-mode-replace").classList.remove("selected");
+  document.getElementById("swap-replacement-block").style.display = "none";
+  swapReplacementSelected = null;
+  updateSwapHint();
+});
+setupExtraToggle("swap", updateSwapHint);
+
+document.getElementById("swap-submit").addEventListener("click", () => {
+  if (!swapReady()){
+    const hint = document.getElementById("swap-hint");
+    hint.textContent = "Заполни все поля";
+    hint.classList.add("angry");
+    const btn = document.getElementById("swap-submit");
+    btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
+    return;
+  }
+
+  const entry = currentSwapEntry();
+  const date = entry.date;
+  const extra = getExtraName("swap");
+  const replacementName = swapMode === "replace" ? (extra || swapReplacementSelected) : null;
+
+  let newStaff = entry.staff.filter(n => n !== swapSelectedWho);
+  if (swapMode === "replace") newStaff.push(replacementName);
+  let newOff = entry.off;
+  if (swapMode === "replace" && newOff === replacementName) newOff = undefined; // тот, кто был выходной, теперь вышел подменить
+
+  const updatedEntry = { date, staff: newStaff, off: newOff };
+  scheduleEntries = mergeScheduleEntries(scheduleEntries, [updatedEntry]);
+  renderSchedule();
+
+  const text = swapMode === "replace"
+    ? `rambling :
+🔄 Замена на смену — Rambling
+${formatScheduleDate(date)}: ${swapSelectedWho} → ${replacementName}
+Теперь работают: ${newStaff.join(", ") || "—"}
+Дата: ${formatDateRu()}
+Время: ${nowTimeStr()}`
+    : `rambling :
+🧍 Соло смена — Rambling
+${formatScheduleDate(date)}: ${swapSelectedWho} не выходит, работает один — ${newStaff.join(", ") || "—"}
+Дата: ${formatDateRu()}
+Время: ${nowTimeStr()}`;
+
+  document.getElementById("done-badge").textContent = swapMode === "replace" ? "🔄" : "🧍";
+  document.getElementById("done-title").textContent = swapMode === "replace" ? "Замена оформлена" : "Соло смена оформлена";
+  document.getElementById("msg-preview").textContent = text;
+  showScreen("screen-done");
+  sendReportToTelegram(text, "schedule_update", { entries: [updatedEntry], by: "" });
+});
 
 // Поставщик по каждому сырьевому ингредиенту (не по настойке) — используется, чтобы в
 // итоговом списке закупки сразу было видно, у кого что брать. Ингредиенты без поставщика
