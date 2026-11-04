@@ -354,7 +354,7 @@
       <div class="reminder-banner-list" id="reminder-banner-list"></div>
     </div>
     <div class="option-list">
-      <button class="option-btn" id="go-cash-menu"><span>💰 Открытие/закрытие кассы</span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-cash-menu"><span>💰 Открытие/закрытие кассы / взнос</span><span class="arrow">›</span></button>
       <button class="option-btn" id="go-expense-quick"><span>💸 Записать трату</span><span class="arrow">›</span></button>
       <button class="option-btn" id="go-procurement">
         <span>🧾 Заявка на закупку<span class="sub" id="procurement-sub" style="display:none;">Доступно по средам и воскресеньям</span></span>
@@ -374,8 +374,21 @@
     </div>
     <div class="form-body">
       <button class="add-expense-btn" id="go-schedule-upload" type="button" style="margin-bottom:10px;">✏️ Обновить график</button>
-      <button class="add-expense-btn" id="go-schedule-swap" type="button" style="margin-bottom:14px;">🔄 Замена / соло смена</button>
+      <button class="add-expense-btn" id="go-schedule-swap" type="button" style="margin-bottom:10px;">🔄 Замена / соло смена</button>
+      <button class="add-expense-btn" id="go-schedule-archive" type="button" style="margin-bottom:14px;">🗄 Архив графика</button>
       <div id="schedule-list"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN: архив всех загруженных графиков (начиная с ноября 2026) -->
+  <div class="screen" id="screen-schedule-archive">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-schedule-archive" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">🗄 Архив графика</div>
+    </div>
+    <div class="form-body">
+      <div class="field-hint" style="margin-bottom:14px;">Все смены начиная с ноября 2026 — и прошедшие, и будущие, в хронологическом порядке.</div>
+      <div id="schedule-archive-list"></div>
     </div>
   </div>
 
@@ -812,6 +825,44 @@
     </div>
   </div>
 
+  <!-- SCREEN: quick deposit into the till during the shift -->
+  <div class="screen" id="screen-deposit-quick">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-deposit-quick" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">➕ Внести взнос</div>
+      <div class="top-bar-meta" id="deposit-quick-meta"></div>
+    </div>
+    <div class="form-body">
+
+      <div class="field-block">
+        <div class="field-label">Кто внёс (необязательно)</div>
+        <div class="chip-row" id="deposit-quick-employee-chips"></div>
+        <button class="add-expense-btn" id="deposit-quick-toggle-extra" type="button" style="margin-top:10px;">+ Дополнительный бармен</button>
+        <div id="deposit-quick-extra-wrap" style="display:none; margin-top:10px;">
+          <input class="text-input" type="text" id="deposit-quick-extra-name" placeholder="Имя дополнительного бармена">
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div class="input-col">
+          <div class="input-col-label">За что / почему</div>
+          <input class="text-input" type="text" id="deposit-quick-name" placeholder="Сдача, личные деньги и т.п.">
+        </div>
+        <div class="input-col amount-col">
+          <div class="input-col-label">Сумма</div>
+          <input class="num-input" type="number" inputmode="decimal" id="deposit-quick-amount" placeholder="0">
+        </div>
+      </div>
+
+      <div class="field-hint" style="margin-top:10px;">Взнос сразу уйдёт в чат Rambling и сам появится во «Взносах в кассу» при закрытии кассы — вбивать его туда ещё раз не нужно.</div>
+
+    </div>
+    <div class="bottom-bar">
+      <div class="finish-hint" id="deposit-quick-hint">Укажите, за что и сколько</div>
+      <button class="finish-btn" id="deposit-quick-submit">➕ Отправить</button>
+    </div>
+  </div>
+
   <!-- SCREEN 0: cash menu -->
   <div class="screen center-screen" id="screen-menu">
     <div class="back-link" id="back-from-menu">← Назад</div>
@@ -821,6 +872,7 @@
     <div class="option-list">
       <button class="option-btn" id="go-open"><span>🟢 Открыть кассу</span><span class="arrow">›</span></button>
       <button class="option-btn" id="go-close"><span>🔴 Закрыть кассу</span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-deposit-quick"><span>➕ Внести взнос</span><span class="arrow">›</span></button>
     </div>
   </div>
 
@@ -954,6 +1006,12 @@
         <div class="input-col-label" style="margin-bottom:10px;">Прочие траты</div>
         <div id="expense-rows"></div>
         <button class="add-expense-btn" id="add-expense" type="button">+ Добавить трату</button>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div class="input-col-label" style="margin-bottom:10px;">➕ Взносы в кассу</div>
+        <div id="deposit-rows"></div>
+        <button class="add-expense-btn" id="add-deposit" type="button">+ Добавить взнос</button>
       </div>
 
       <div class="final-card">
@@ -1214,12 +1272,19 @@ document.getElementById("open-submit").addEventListener("click", () => {
 /* ---------- CLOSE SHIFT ---------- */
 let closeSelected = new Set();
 let expenses = []; // { name, amount, auto?, id? }
+let deposits = []; // { name, amount, auto?, id? } — внесённые в кассу деньги (обратное трате: плюсуется к остатку)
 let finalBalanceEdited = false; // true, если бармен вручную поправил остаток в кассе
 let autoExpenseIds = new Set(); // id трат, уже подтянутых с сервера в этой сессии (чтобы не задваивать)
+let autoDepositIds = new Set(); // id взносов, уже подтянутых с сервера в этой сессии (чтобы не задваивать)
 
 function addExpenseRow(){
   expenses.push({ name: "", amount: "" });
   renderExpenses();
+}
+
+function addDepositRow(){
+  deposits.push({ name: "", amount: "" });
+  renderDeposits();
 }
 
 // Подтягивает траты, которые бармены уже отправили за сегодня через «💸 Записать трату»,
@@ -1250,6 +1315,37 @@ async function fetchTodayExpenses(){
     }
   } catch (e) {
     // тихо игнорируем — трату всё равно можно добавить вручную
+  }
+}
+
+// Подтягивает взносы, которые бармены уже отправили за сегодня через «➕ Внести взнос»,
+// чтобы не вбивать их вручную ещё раз при закрытии кассы.
+async function fetchTodayDeposits(){
+  try {
+    const resp = await fetch(RELAY_URL + "?action=deposits", {
+      method: "GET",
+      headers: { "X-App-Secret": RELAY_APP_SECRET },
+    });
+    const data = await resp.json();
+    if (!data || !data.ok || !Array.isArray(data.deposits)) return;
+    let added = false;
+    data.deposits.forEach(e => {
+      if (!e || !e.id || autoDepositIds.has(e.id)) return;
+      autoDepositIds.add(e.id);
+      deposits.push({
+        name: e.by ? `${e.name} — ${e.by}` : (e.name || ""),
+        amount: e.amount || 0,
+        auto: true,
+        id: e.id,
+      });
+      added = true;
+    });
+    if (added){
+      renderDeposits();
+      recalcClose();
+    }
+  } catch (e) {
+    // тихо игнорируем — взнос всё равно можно добавить вручную
   }
 }
 
@@ -1300,6 +1396,30 @@ function renderExpenses(){
   });
 }
 
+function renderDeposits(){
+  const container = document.getElementById("deposit-rows");
+  container.innerHTML = "";
+  deposits.forEach((dep, idx) => {
+    const row = document.createElement("div");
+    row.className = "expense-row";
+    row.innerHTML = `
+      <div class="input-col">
+        <div class="input-col-label">За что${dep.auto ? ' <span style="color:var(--amber);">· уже в чате</span>' : ""}</div>
+        <input class="text-input" type="text" placeholder="Сдача, личные деньги и т.п." data-role="dep-name" value="${dep.name}">
+      </div>
+      <div class="input-col amount-col">
+        <div class="input-col-label">Сумма</div>
+        <input class="num-input" type="number" inputmode="decimal" placeholder="0" data-role="dep-amount" value="${dep.amount}">
+      </div>
+      <button class="remove-expense" type="button" data-role="dep-remove">×</button>
+    `;
+    row.querySelector('[data-role="dep-name"]').addEventListener("input", e => { deposits[idx].name = e.target.value; });
+    row.querySelector('[data-role="dep-amount"]').addEventListener("input", e => { deposits[idx].amount = e.target.value; recalcClose(); });
+    row.querySelector('[data-role="dep-remove"]').addEventListener("click", () => { deposits.splice(idx,1); renderDeposits(); recalcClose(); });
+    container.appendChild(row);
+  });
+}
+
 function recalcClose(){
   const posterCash = num(document.getElementById("poster-cash").value);
   const posterCard = num(document.getElementById("poster-card").value);
@@ -1329,8 +1449,11 @@ function recalcClose(){
   const salary = num(document.getElementById("salary").value);
   const cardTips = num(document.getElementById("card-tips").value);
   const expensesTotal = expenses.reduce((sum, e) => sum + num(e.amount), 0);
+  const depositsTotal = deposits.reduce((sum, e) => sum + num(e.amount), 0);
 
-  const finalBalance = openingCash + actualCash - salary - cardTips - expensesTotal;
+  // Взнос — деньги, довнесённые в кассу (например, разменять или покрыть недостачу), поэтому
+  // плюсуется к остатку — это обратное тратам, которые из остатка вычитаются.
+  const finalBalance = openingCash + actualCash + depositsTotal - salary - cardTips - expensesTotal;
   document.getElementById("final-balance-auto-hint").textContent = `Авто-расчёт: ${fmt(finalBalance)}`;
   if (!finalBalanceEdited){
     document.getElementById("final-balance").value = Math.round(finalBalance * 100) / 100;
@@ -1356,6 +1479,7 @@ document.getElementById("go-close").addEventListener("click", () => {
   document.getElementById("close-meta").textContent = formatDateRu() + " · " + nowTimeStr();
   showScreen("screen-close");
   fetchTodayExpenses();
+  fetchTodayDeposits();
   fetchTodayOpenCash();
 });
 document.getElementById("back-from-close").addEventListener("click", () => showScreen("screen-menu"));
@@ -1389,6 +1513,7 @@ setupCashCalculator({
   document.getElementById(id).addEventListener("input", recalcClose);
 });
 document.getElementById("add-expense").addEventListener("click", addExpenseRow);
+document.getElementById("add-deposit").addEventListener("click", addDepositRow);
 recalcClose();
 
 document.getElementById("close-submit").addEventListener("click", () => {
@@ -1414,6 +1539,7 @@ document.getElementById("close-submit").addEventListener("click", () => {
   const salary = num(document.getElementById("salary").value);
   const cardTips = num(document.getElementById("card-tips").value);
   const expensesTotal = expenses.reduce((sum, e) => sum + num(e.amount), 0);
+  const depositsTotal = deposits.reduce((sum, e) => sum + num(e.amount), 0);
   const finalBalance = num(document.getElementById("final-balance").value);
 
   let text =
@@ -1451,6 +1577,15 @@ ${Math.abs(diff) < 0.01 ? "✅ Разница: 0" : `⚠️ Разница: ${(d
       text += `\n— ${e.name || "Без названия"}: ${fmt(num(e.amount))}`;
     }
   });
+
+  if (deposits.length && depositsTotal > 0){
+    text += `\n\n➕ Взносы в кассу:`;
+    deposits.forEach(e => {
+      if (e.name || num(e.amount) > 0){
+        text += `\n— ${e.name || "Без названия"}: ${fmt(num(e.amount))}`;
+      }
+    });
+  }
 
   text += `\n\n💰 Остаток наличных в кассе: ${fmt(finalBalance)}`;
 
@@ -1522,6 +1657,61 @@ ${names ? "Кто потратил: " + names + "\n" : ""}Дата: ${formatDate
   document.getElementById("msg-preview").textContent = text;
   showScreen("screen-done");
   sendReportToTelegram(text, "expense", { name, amount, by: names });
+});
+
+/* ---------- БЫСТРОЕ ВНЕСЕНИЕ ВЗНОСА В КАССУ ВО ВРЕМЯ СМЕНЫ ---------- */
+let depositQuickSelected = new Set();
+
+function depositQuickReady(){
+  return document.getElementById("deposit-quick-name").value.trim() !== ""
+    && num(document.getElementById("deposit-quick-amount").value) > 0;
+}
+function refreshDepositQuickHint(){
+  const btn = document.getElementById("deposit-quick-submit");
+  const hint = document.getElementById("deposit-quick-hint");
+  const ready = depositQuickReady();
+  btn.classList.toggle("ready", ready);
+  hint.textContent = ready ? "Готово к отправке" : "Укажите, за что и сколько";
+}
+
+document.getElementById("go-deposit-quick").addEventListener("click", () => {
+  document.getElementById("deposit-quick-meta").textContent = formatDateRu() + " · " + nowTimeStr();
+  document.getElementById("deposit-quick-name").value = "";
+  document.getElementById("deposit-quick-amount").value = "";
+  showScreen("screen-deposit-quick");
+  refreshDepositQuickHint();
+});
+document.getElementById("back-from-deposit-quick").addEventListener("click", () => showScreen("screen-menu"));
+renderChips("deposit-quick-employee-chips", depositQuickSelected, refreshDepositQuickHint);
+setupExtraToggle("deposit-quick", refreshDepositQuickHint);
+document.getElementById("deposit-quick-name").addEventListener("input", refreshDepositQuickHint);
+document.getElementById("deposit-quick-amount").addEventListener("input", refreshDepositQuickHint);
+
+document.getElementById("deposit-quick-submit").addEventListener("click", () => {
+  if (!depositQuickReady()){
+    const hint = document.getElementById("deposit-quick-hint");
+    hint.textContent = "Укажи, за что внесли, и сумму больше нуля";
+    hint.classList.add("angry");
+    const btn = document.getElementById("deposit-quick-submit");
+    btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
+    return;
+  }
+  const name = document.getElementById("deposit-quick-name").value.trim();
+  const amount = num(document.getElementById("deposit-quick-amount").value);
+  const names = getNames(depositQuickSelected, "deposit-quick").join(", ");
+
+  const text =
+`rambling :
+➕ Взнос в кассу — Rambling
+${name}: ${fmt(amount)}
+${names ? "Кто внёс: " + names + "\n" : ""}Дата: ${formatDateRu()}
+Время: ${nowTimeStr()}`;
+
+  document.getElementById("done-badge").textContent = "➕";
+  document.getElementById("done-title").textContent = "Взнос записан";
+  document.getElementById("msg-preview").textContent = text;
+  showScreen("screen-done");
+  sendReportToTelegram(text, "deposit", { name, amount, by: names });
 });
 
 /* ---------- КОКТЕЙЛИ (справочник техничек) ---------- */
@@ -11777,41 +11967,12 @@ document.getElementById("infusion-ref-detail-body").addEventListener("click", (e
 });
 
 /* ---------- ГРАФИК РАБОТЫ (смены сотрудников) ---------- */
-// Обновляется вручную по мере поступления нового графика от Алексея — старый график
-// нужно заменять/дополнять здесь. Формат даты — "YYYY-MM-DD".
+// Реальный график теперь полностью хранится на сервере (RAMBLING_KV) — его бармены
+// загружают через "Обновить график" в приложении. Здесь раньше лежали тестовые
+// данные за сентябрь (демо-график времён разработки) — они больше не нужны и были
+// удалены, чтобы не подмешиваться поверх настоящего графика. Формат даты — "YYYY-MM-DD".
 // Каждая запись: { date: "YYYY-MM-DD", staff: ["Имя1", "Имя2", ...], off?: "Имя" }
-const SHIFT_SCHEDULE = [
-  { date: "2026-09-01", staff: ["Саша", "Таня"], off: "Коля" },
-  { date: "2026-09-02", staff: ["Саша", "Коля"], off: "Таня" },
-  { date: "2026-09-03", staff: ["Таня", "Коля"], off: "Саша" },
-  { date: "2026-09-04", staff: ["Саша", "Таня"], off: "Коля" },
-  { date: "2026-09-05", staff: ["Таня", "Коля"], off: "Саша" },
-  { date: "2026-09-06", staff: ["Саша", "Таня"], off: "Коля" },
-  { date: "2026-09-07", staff: ["Саша", "Коля"], off: "Таня" },
-  { date: "2026-09-08", staff: ["Саша", "Таня"], off: "Коля" },
-  { date: "2026-09-09", staff: ["Саша", "Таня"], off: "Коля" },
-  { date: "2026-09-10", staff: ["Таня", "Коля"], off: "Саша" },
-  { date: "2026-09-11", staff: ["Саша", "Таня"], off: "Коля" },
-  { date: "2026-09-12", staff: ["Саша", "Коля"], off: "Таня" },
-  { date: "2026-09-13", staff: ["Саша", "Семен"], off: "Коля" },
-  { date: "2026-09-14", staff: ["Саша", "Семен"], off: "Коля" },
-  { date: "2026-09-15", staff: ["Таня", "Коля"], off: "Саша" },
-  { date: "2026-09-16", staff: ["Саша", "Таня"], off: "Коля" },
-  { date: "2026-09-17", staff: ["Саша", "Коля"], off: "Таня" },
-  { date: "2026-09-18", staff: ["Саша", "Семен"], off: "Коля" },
-  { date: "2026-09-19", staff: ["Саша", "Семен"], off: "Коля" },
-  { date: "2026-09-20", staff: ["Оля", "Коля"], off: "Саша" },
-  { date: "2026-09-21", staff: ["Саша", "Семен"], off: "Коля" },
-  { date: "2026-09-22", staff: ["Саша", "Коля"], off: "Таня" },
-  { date: "2026-09-23", staff: ["Саша", "Семен"], off: "Коля" },
-  { date: "2026-09-24", staff: ["Саша", "Оля"], off: "Коля" },
-  { date: "2026-09-25", staff: ["Семен", "Коля"], off: "Саша" },
-  { date: "2026-09-26", staff: ["Саша", "Таня"], off: "Коля" },
-  { date: "2026-09-27", staff: ["Саша", "Коля"], off: "Таня" },
-  { date: "2026-09-28", staff: ["Саша", "Таня"], off: "Коля" },
-  { date: "2026-09-29", staff: ["Таня", "Саша"], off: "Коля" },
-  { date: "2026-09-30", staff: ["Таня", "Коля"], off: "Саша" },
-];
+const SHIFT_SCHEDULE = [];
 
 const WEEKDAY_NAMES_RU = ["воскресенье","понедельник","вторник","среда","четверг","пятница","суббота"];
 const MONTH_NAMES_RU = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
@@ -11849,10 +12010,14 @@ function renderSchedule(){
   container.innerHTML = "";
   const today = todayDateStr();
   const sorted = [...scheduleEntries].sort((a, b) => a.date.localeCompare(b.date));
+  // Основной экран графика показывает только сегодня и будущее — прошедшие смены сюда
+  // не попадают (иначе список бы бесконечно рос месяц за месяцем). Вся история доступна
+  // отдельно, в "Архиве графика" (см. renderScheduleArchive).
+  const upcoming = sorted.filter(e => e.date >= today);
 
   // Закреплённая карточка "Сегодня" сверху (с мини-календарём внутри) — показывается всегда,
   // даже если график на сегодня ещё не загружен, просто для ориентира по дате.
-  const todayEntry = sorted.find(e => e.date === today);
+  const todayEntry = upcoming.find(e => e.date === today);
   const summary = document.createElement("div");
   summary.className = "sum-card";
   summary.style.cssText = "margin-bottom:16px; border:2px solid var(--red); background: var(--surface-2);";
@@ -11868,15 +12033,15 @@ function renderSchedule(){
   `;
   container.appendChild(summary);
 
-  if (scheduleEntries.length === 0){
-    container.insertAdjacentHTML("beforeend", `<div class="field-hint" style="padding:10px 0;">График пока не добавлен — пришли даты и кто работает, и я его заполню.</div>`);
+  if (upcoming.length === 0){
+    container.insertAdjacentHTML("beforeend", `<div class="field-hint" style="padding:10px 0;">График на ближайшее время пока не добавлен — пришли даты и кто работает, и я его заполню.</div>`);
     return;
   }
 
-  sorted.forEach(entry => {
+  upcoming.forEach(entry => {
     const [y, m, d] = entry.date.split("-").map(Number);
     const dow = new Date(y, m - 1, d).getDay(); // 0 = воскресенье ... 6 = суббота
-    const isPast = entry.date < today;
+    const isPast = false; // upcoming уже отфильтрован от сегодня и позже
     const isToday = entry.date === today;
     const isCalendarWeekend = dow === 0 || dow === 6;
     const card = document.createElement("div");
@@ -11936,8 +12101,75 @@ document.getElementById("go-schedule").addEventListener("click", () => {
 });
 document.getElementById("back-from-schedule").addEventListener("click", () => showScreen("screen-root"));
 
+// С какой даты вести архив графика — раньше этой даты реальных данных нет
+// (старый тестовый сентябрьский график был удалён из кода, см. SHIFT_SCHEDULE выше).
+const ARCHIVE_START_DATE = "2026-11-01";
+
+// Архив графика — вся история смен начиная с ARCHIVE_START_DATE, включая уже прошедшие
+// месяцы (которые на основном экране "График работы" больше не показываются, чтобы тот
+// не разрастался до бесконечности). Кнопки "Замена" здесь нет — архив только для просмотра.
+function renderScheduleArchive(){
+  const container = document.getElementById("schedule-archive-list");
+  container.innerHTML = "";
+  const today = todayDateStr();
+  const sorted = [...scheduleEntries]
+    .filter(e => e.date >= ARCHIVE_START_DATE)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  if (sorted.length === 0){
+    container.insertAdjacentHTML("beforeend", `<div class="field-hint" style="padding:10px 0;">Пока нет ни одной загруженной смены.</div>`);
+    return;
+  }
+
+  let currentMonthKey = null;
+  sorted.forEach(entry => {
+    const [y, m, d] = entry.date.split("-").map(Number);
+    const monthKey = `${y}-${pad(m)}`;
+    if (monthKey !== currentMonthKey){
+      currentMonthKey = monthKey;
+      const monthLabel = document.createElement("div");
+      monthLabel.style.cssText = "margin:18px 0 8px; font-weight:800; color: var(--text-dim); text-transform:uppercase; font-size:12px; letter-spacing:1px;";
+      monthLabel.textContent = `${MONTH_NAMES_RU_NOM[m - 1]} ${y}`;
+      container.appendChild(monthLabel);
+    }
+    const dow = new Date(y, m - 1, d).getDay();
+    const isPast = entry.date < today;
+    const isToday = entry.date === today;
+    const isCalendarWeekend = dow === 0 || dow === 6;
+    const card = document.createElement("div");
+    card.className = "sum-card";
+    card.style.marginBottom = "8px";
+    if (isCalendarWeekend){
+      card.style.background = "var(--amber-dim)";
+      card.style.borderLeft = "4px solid var(--amber)";
+    }
+    if (isPast) card.style.opacity = "0.6";
+    if (isToday){
+      card.style.background = "var(--red-dim)";
+      card.style.border = "2px solid var(--red)";
+      card.style.borderLeft = "2px solid var(--red)";
+    }
+    const todayBadge = isToday ? ` <span style="color: var(--red); font-weight:800;">· сегодня</span>` : "";
+    card.innerHTML = `
+      <div class="sum-row" style="margin-bottom:6px;">
+        <span class="label" style="font-weight:800; color: var(--text);"><span style="text-transform:capitalize;">${formatScheduleDate(entry.date)}</span>${todayBadge}</span>
+      </div>
+      <div class="sum-row"><span class="value" style="text-align:left; color: var(--text);">👥 ${entry.staff.join(", ") || "—"}</span></div>
+      ${renderOffBadge(entry.off)}
+    `;
+    container.appendChild(card);
+  });
+}
+
+document.getElementById("go-schedule-archive").addEventListener("click", () => {
+  renderScheduleArchive();
+  showScreen("screen-schedule-archive");
+});
+document.getElementById("back-from-schedule-archive").addEventListener("click", () => showScreen("screen-schedule"));
+
 /* ---------- ЗАГРУЗКА ГРАФИКА БАРМЕНАМИ (вставка текста из ИИ) ---------- */
-// SHIFT_SCHEDULE — "сид": то, что зашито в код на момент последнего обновления файла.
+// SHIFT_SCHEDULE — "сид": то, что зашито в код на момент последнего обновления файла (сейчас пуст,
+// см. комментарий выше по файлу — реальные данные полностью живут на сервере).
 // scheduleEntries — живые данные: сид + всё, что бармены загрузили через приложение
 // (хранится в RAMBLING_KV на Worker'е, общее для всех).
 let scheduleEntries = [...SHIFT_SCHEDULE];
@@ -12057,6 +12289,22 @@ ${exampleBlock}
 //   2 ср — Саша, Коля (Таня выходной)
 // Строки-разделители ("____"), пустые строки и отдельные заметки (без номера дня в начале)
 // просто игнорируются.
+// Ищет название месяца в строке, даже если это не отдельная строка целиком (например,
+// "‼️ГРАФИК НА НОЯБРЬ‼️" или "График на ноябрь 2026") — бармены часто оформляют заголовок
+// с эмодзи и словами вокруг, а не просто пишут "Ноябрь" одним словом.
+function findMonthHeaderInLine(line){
+  const lower = line.toLowerCase();
+  for (let i = 0; i < MONTH_NAMES_RU_NOM.length; i++){
+    const monthWord = MONTH_NAMES_RU_NOM[i];
+    const re = new RegExp(`(^|[^а-яё])${monthWord}([^а-яё]|$)`, "i");
+    if (re.test(lower)){
+      const yearMatch = line.match(/\d{4}/);
+      return { monthIdx: i, year: yearMatch ? parseInt(yearMatch[0], 10) : null };
+    }
+  }
+  return null;
+}
+
 function parseScheduleText(text){
   const lines = (text || "").split("\n");
   const entries = [];
@@ -12068,22 +12316,23 @@ function parseScheduleText(text){
     const line = raw.trim();
     if (!line) return;
 
-    // заголовок месяца: "Сентябрь" или "Сентябрь 2026"
-    const headerMatch = line.match(/^([А-Яа-яёЁ]+)\s*(\d{4})?$/);
-    if (headerMatch){
-      const idx = MONTH_NAMES_RU_NOM.indexOf(headerMatch[1].toLowerCase());
-      if (idx !== -1){
-        currentMonth = idx;
-        if (headerMatch[2]){
-          currentYear = parseInt(headerMatch[2], 10);
+    // Строка дня начинается с номера дня — если это не она, проверяем, нет ли здесь
+    // названия месяца (заголовок), и в любом случае на этом для такой строки всё.
+    const headMatch = line.match(/^(\d{1,2})\s+/);
+    if (!headMatch){
+      const headerInfo = findMonthHeaderInLine(line);
+      if (headerInfo){
+        currentMonth = headerInfo.monthIdx;
+        if (headerInfo.year){
+          currentYear = headerInfo.year;
         } else {
           let yr = today.getFullYear();
-          const probe = new Date(yr, idx, 1);
+          const probe = new Date(yr, headerInfo.monthIdx, 1);
           if ((today - probe) / 86400000 > 20) yr += 1; // этот месяц в этом году уже прошёл — считаем, что про следующий год
           currentYear = yr;
         }
-        return;
       }
+      return;
     }
 
     // Если до первой строки с днём так и не встретилась строка с названием месяца (например,
@@ -12096,8 +12345,6 @@ function parseScheduleText(text){
       currentYear = guess.year;
     }
 
-    const headMatch = line.match(/^(\d{1,2})\s+/);
-    if (!headMatch) return;
     const day = parseInt(headMatch[1], 10);
     // Проверяем не просто "1..31", а реальное количество дней в этом месяце — иначе, например,
     // "31" для ноября (в нём только 30 дней) превратится в несуществующую дату.
@@ -12109,18 +12356,43 @@ function parseScheduleText(text){
     const rest = dashMatch[1].trim();
 
     let staffPart = rest;
-    let off = "";
+    let offRaw = "";
     const parenMatch = rest.match(/^(.*?)\s*\(([^)]*)\)\s*$/);
     if (parenMatch){
       staffPart = parenMatch[1].trim();
-      off = parenMatch[2].replace(/выходной\.?/i, "").trim();
+      offRaw = parenMatch[2].trim();
+    }
+
+    // Соло-смена — работает только один человек, у остальных в этот день выходной сам собой.
+    // Встречается в двух формах: "Саша (соло)" (слово "соло" вместо имени в скобках) и
+    // "Коля соло(Таня и Саша выходной)" (слово "соло" прилепилось к имени без пробела перед
+    // скобкой). В обоих случаях это не имя того, кто выходной, а просто пометка формата.
+    let isSolo = false;
+    if (/^соло\.?$/i.test(offRaw.replace(/выходной\.?/i, "").trim())){
+      isSolo = true;
+      offRaw = "";
+    } else {
+      const soloInStaffMatch = staffPart.match(/^(.*?)\s*соло\s*$/i);
+      if (soloInStaffMatch && soloInStaffMatch[1].trim()){
+        staffPart = soloInStaffMatch[1].trim();
+        isSolo = true;
+      }
     }
 
     const staff = staffPart.split(",").map(s => s.trim()).filter(Boolean);
     if (staff.length === 0) return;
 
+    let off;
+    if (!isSolo && offRaw){
+      const offClean = offRaw.replace(/выходной\.?/i, "").trim();
+      // "Таня и Саша" — сразу двое выходных одновременно — перечисляем через запятую,
+      // а не теряем и не впихиваем в одно "имя".
+      const offNames = offClean.split(/,|\sи\s/i).map(s => s.trim()).filter(Boolean);
+      off = offNames.join(", ") || undefined;
+    }
+
     const dateStr = `${currentYear}-${pad(currentMonth + 1)}-${pad(day)}`;
-    entries.push({ date: dateStr, staff, off: off || undefined });
+    entries.push({ date: dateStr, staff, off });
   });
 
   return entries;
