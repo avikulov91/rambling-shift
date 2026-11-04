@@ -463,6 +463,8 @@
 
       <div class="field-hint" id="schedule-upload-preview">Вставь текст графика — здесь появится, сколько дней распознано</div>
 
+      <div class="field-hint" style="margin-top:10px; color: var(--amber);">⚠️ Загрузка полностью заменяет график на весь месяц, который указан в тексте — старые дни этого месяца удаляются, даже если их не было в новом тексте. Другие месяцы не затрагиваются.</div>
+
     </div>
     <div class="bottom-bar">
       <div class="finish-hint" id="schedule-upload-hint">Вставьте график для загрузки</div>
@@ -12038,7 +12040,11 @@ function renderSchedule(){
     return;
   }
 
-  upcoming.forEach(entry => {
+  // Сегодняшний день уже показан отдельной закреплённой карточкой выше — в прокручиваемом
+  // списке ниже его не повторяем, список начинается с завтра.
+  const rest = upcoming.filter(e => e.date !== today);
+
+  rest.forEach(entry => {
     const [y, m, d] = entry.date.split("-").map(Number);
     const dow = new Date(y, m - 1, d).getDay(); // 0 = воскресенье ... 6 = суббота
     const isPast = false; // upcoming уже отфильтрован от сегодня и позже
@@ -12453,6 +12459,17 @@ document.getElementById("schedule-upload-submit").addEventListener("click", () =
   const sorted = [...lastParsedScheduleEntries].sort((a, b) => a.date.localeCompare(b.date));
   const rangeText = `с ${formatScheduleDate(sorted[0].date)} по ${formatScheduleDate(sorted[sorted.length - 1].date)}`;
 
+  // Загрузка графика через этот экран означает "вот ПОЛНЫЙ график на месяц" — поэтому перед
+  // добавлением новых дней стираем все старые дни ТЕХ ЖЕ месяцев (даже если их не было
+  // в новом тексте). Так если график на месяц переделали с нуля, старые "хвосты" от
+  // предыдущей версии не остаются висеть — месяц полностью заменяется, а не просто дополняется.
+  // На замену/соло-смену (другой обработчик) это не влияет — там только одна дата и месяц не трогаем.
+  const replaceMonths = Array.from(new Set(lastParsedScheduleEntries.map(e => e.date.slice(0, 7))));
+  const monthNamesText = replaceMonths
+    .map(ym => { const [y, m] = ym.split("-").map(Number); return `${MONTH_NAMES_RU_NOM[m - 1]} ${y}`; })
+    .join(", ");
+
+  scheduleEntries = scheduleEntries.filter(e => !replaceMonths.includes(e.date.slice(0, 7)));
   scheduleEntries = mergeScheduleEntries(scheduleEntries, lastParsedScheduleEntries);
   renderSchedule();
 
@@ -12460,6 +12477,7 @@ document.getElementById("schedule-upload-submit").addEventListener("click", () =
 `rambling :
 📅 График обновлён — Rambling
 Загружено дней: ${sorted.length} (${rangeText})
+Старый график на ${monthNamesText} полностью заменён этим
 ${names ? "Кто загрузил: " + names + "\n" : ""}Дата: ${formatDateRu()}
 Время: ${nowTimeStr()}`;
 
@@ -12467,7 +12485,7 @@ ${names ? "Кто загрузил: " + names + "\n" : ""}Дата: ${formatDate
   document.getElementById("done-title").textContent = "График загружен";
   document.getElementById("msg-preview").textContent = text;
   showScreen("screen-done");
-  sendReportToTelegram(text, "schedule_update", { entries: lastParsedScheduleEntries, by: names });
+  sendReportToTelegram(text, "schedule_update", { entries: lastParsedScheduleEntries, by: names, replaceMonths });
 });
 
 /* ---------- ЗАМЕНА НА СМЕНУ / СОЛО-СМЕНА ---------- */
