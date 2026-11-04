@@ -360,6 +360,7 @@
         <span>🧾 Заявка на закупку<span class="sub" id="procurement-sub" style="display:none;">Доступно по средам и воскресеньям</span></span>
         <span class="arrow">›</span>
       </button>
+      <button class="option-btn" id="go-procurement-extra"><span>➕ Экстра заявка<span class="sub">Любая категория, в любой день</span></span><span class="arrow">›</span></button>
       <button class="option-btn" id="go-cocktails"><span>🍸 Коктейли — технички</span><span class="arrow">›</span></button>
       <button class="option-btn" id="go-infusions-ref"><span>🫙 Настойки — технички</span><span class="arrow">›</span></button>
       <button class="option-btn" id="go-schedule"><span>📅 График работы</span><span class="arrow">›</span></button>
@@ -610,6 +611,23 @@
       <button class="option-btn" id="go-fruits"><span>🍋 Заявка на фрукты<span class="sub" id="fruits-day-sub" style="display:none;">Доступно по средам</span></span><span class="arrow">›</span></button>
       <button class="option-btn" id="go-infusions"><span>🫙 Заявка на настойки<span class="sub" id="infusions-day-sub" style="display:none;">Доступно по средам</span></span><span class="arrow">›</span></button>
       <button class="option-btn" id="go-custom"><span>📝 Нестандартная заявка</span><span class="arrow">›</span></button>
+    </div>
+  </div>
+
+  <!-- SCREEN: экстра-заявка — те же разделы, но без ограничения по дню недели -->
+  <div class="screen center-screen" id="screen-procurement-extra">
+    <div class="back-link" id="back-from-procurement-extra">← Назад</div>
+    <div class="glass-icon">➕</div>
+    <div class="start-title">Экстра заявка</div>
+    <div class="start-sub">Любая категория — доступно в любой день недели</div>
+    <div class="option-list">
+      <button class="option-btn" id="go-beer-extra"><span>🍺 Заявка на пиво</span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-herbs-extra"><span>🌿 Заявка на зелень</span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-alcohol-extra"><span>🥃 Заявка на алкоголь</span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-household-extra"><span>🧽 Заявка на хозтовары</span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-fruits-extra"><span>🍋 Заявка на фрукты</span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-infusions-extra"><span>🫙 Заявка на настойки</span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-custom-extra"><span>📝 Нестандартная заявка</span><span class="arrow">›</span></button>
     </div>
   </div>
 
@@ -9346,11 +9364,42 @@ function isProcurementDay(){
 const procurementBtn = document.getElementById("go-procurement");
 const procurementSub = document.getElementById("procurement-sub");
 if (isProcurementDay()){
-  procurementBtn.addEventListener("click", () => showScreen("screen-procurement"));
+  procurementBtn.addEventListener("click", () => {
+    procurementEntryScreen = "screen-procurement";
+    showScreen("screen-procurement");
+  });
 } else {
   procurementBtn.classList.add("disabled");
   procurementSub.style.display = "block";
 }
+
+// Откуда попали на экран конкретной категории (пиво/зелень/...) — обычный "Заявка на закупку"
+// (с ограничением по дням) или "➕ Экстра заявка" (без ограничения). Кнопка "← Назад" на экране
+// категории возвращает туда же, откуда пришли, а не всегда в обычное меню.
+let procurementEntryScreen = "screen-procurement";
+
+// "➕ Экстра заявка" — те же 7 разделов (6 категорий + нестандартная), но без привязки ко дню
+// недели: кликабельно всегда. Каждая кнопка здесь просто "нажимает" соответствующую обычную
+// кнопку (go-beer и т.д.) — так используется вся существующая логика форм без дублирования,
+// pointer-events:none (которым визуально отключены обычные кнопки не в свой день) не мешает
+// программному .click().
+document.getElementById("go-procurement-extra").addEventListener("click", () => showScreen("screen-procurement-extra"));
+document.getElementById("back-from-procurement-extra").addEventListener("click", () => showScreen("screen-root"));
+const EXTRA_PROCUREMENT_MAP = {
+  "go-beer-extra": "go-beer",
+  "go-herbs-extra": "go-herbs",
+  "go-alcohol-extra": "go-alcohol",
+  "go-household-extra": "go-household",
+  "go-fruits-extra": "go-fruits",
+  "go-infusions-extra": "go-infusions",
+  "go-custom-extra": "go-custom",
+};
+Object.entries(EXTRA_PROCUREMENT_MAP).forEach(([extraId, realId]) => {
+  document.getElementById(extraId).addEventListener("click", () => {
+    procurementEntryScreen = "screen-procurement-extra";
+    document.getElementById(realId).click();
+  });
+});
 document.getElementById("back-from-procurement").addEventListener("click", () => showScreen("screen-root"));
 
 // Доступность каждого раздела заявки на закупку по дням недели:
@@ -9456,7 +9505,7 @@ document.getElementById("go-beer").addEventListener("click", () => {
   renderBeerItems("beer-equipment-items", BEER_EQUIPMENT_ITEMS);
   showScreen("screen-beer");
 });
-document.getElementById("back-from-beer").addEventListener("click", () => showScreen("screen-procurement"));
+document.getElementById("back-from-beer").addEventListener("click", () => showScreen(procurementEntryScreen));
 renderChips("beer-employee-chips", beerSelected, refreshBeerHint);
 setupExtraToggle("beer", refreshBeerHint);
 
@@ -9547,7 +9596,7 @@ document.getElementById("go-herbs").addEventListener("click", () => {
   renderHerbItems();
   showScreen("screen-herbs");
 });
-document.getElementById("back-from-herbs").addEventListener("click", () => showScreen("screen-procurement"));
+document.getElementById("back-from-herbs").addEventListener("click", () => showScreen(procurementEntryScreen));
 renderChips("herbs-employee-chips", herbsSelected, refreshHerbsHint);
 setupExtraToggle("herbs", refreshHerbsHint);
 
@@ -9782,7 +9831,7 @@ document.getElementById("go-alcohol").addEventListener("click", () => {
   renderAlcoholSections();
   showScreen("screen-alcohol");
 });
-document.getElementById("back-from-alcohol").addEventListener("click", () => showScreen("screen-procurement"));
+document.getElementById("back-from-alcohol").addEventListener("click", () => showScreen(procurementEntryScreen));
 renderChips("alcohol-employee-chips", alcoholSelected, refreshAlcoholHint);
 setupExtraToggle("alcohol", refreshAlcoholHint);
 
@@ -9886,7 +9935,7 @@ document.getElementById("go-household").addEventListener("click", () => {
   renderHouseholdSections();
   showScreen("screen-household");
 });
-document.getElementById("back-from-household").addEventListener("click", () => showScreen("screen-procurement"));
+document.getElementById("back-from-household").addEventListener("click", () => showScreen(procurementEntryScreen));
 renderChips("household-employee-chips", householdSelected, refreshHouseholdHint);
 setupExtraToggle("household", refreshHouseholdHint);
 
@@ -9984,7 +10033,7 @@ document.getElementById("go-fruits").addEventListener("click", () => {
   renderFruitItems();
   showScreen("screen-fruits");
 });
-document.getElementById("back-from-fruits").addEventListener("click", () => showScreen("screen-procurement"));
+document.getElementById("back-from-fruits").addEventListener("click", () => showScreen(procurementEntryScreen));
 renderChips("fruits-employee-chips", fruitsSelected, refreshFruitsHint);
 setupExtraToggle("fruits", refreshFruitsHint);
 
@@ -10035,7 +10084,7 @@ document.getElementById("go-custom").addEventListener("click", () => {
   document.getElementById("custom-meta").textContent = formatDateRu() + " · " + nowTimeStr();
   showScreen("screen-custom");
 });
-document.getElementById("back-from-custom").addEventListener("click", () => showScreen("screen-procurement"));
+document.getElementById("back-from-custom").addEventListener("click", () => showScreen(procurementEntryScreen));
 renderChips("custom-employee-chips", customSelected, refreshCustomHint);
 setupExtraToggle("custom", refreshCustomHint);
 document.getElementById("custom-text").addEventListener("input", refreshCustomHint);
@@ -12862,7 +12911,7 @@ document.getElementById("go-infusions").addEventListener("click", () => {
   refreshInfusionsHint();
   showScreen("screen-infusions");
 });
-document.getElementById("back-from-infusions").addEventListener("click", () => showScreen("screen-procurement"));
+document.getElementById("back-from-infusions").addEventListener("click", () => showScreen(procurementEntryScreen));
 renderChips("infusions-employee-chips", infusionsSelected, refreshInfusionsHint);
 setupExtraToggle("infusions", refreshInfusionsHint);
 document.getElementById("infusions-search").addEventListener("input", e => renderInfusionItems(e.target.value));
