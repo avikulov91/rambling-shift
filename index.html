@@ -363,8 +363,109 @@
       <button class="option-btn" id="go-procurement-extra"><span>➕ Экстра заявка<span class="sub">Любая категория, в любой день</span></span><span class="arrow">›</span></button>
       <button class="option-btn" id="go-cocktails"><span>🍸 Коктейли — технички</span><span class="arrow">›</span></button>
       <button class="option-btn" id="go-infusions-ref"><span>🫙 Настойки — технички</span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-kitchen"><span>🍳 Кухня<span class="sub">Заготовки, тех.карты блюд, правила хранения</span></span><span class="arrow">›</span></button>
       <button class="option-btn" id="go-schedule"><span>📅 График работы</span><span class="arrow">›</span></button>
     </div>
+  </div>
+
+  <!-- SCREEN: kitchen submenu -->
+  <div class="screen center-screen" id="screen-kitchen">
+    <div class="back-link" id="back-from-kitchen">← Назад</div>
+    <div class="glass-icon">🍳</div>
+    <div class="start-title">Кухня</div>
+    <div class="start-sub">Выберите раздел</div>
+    <div class="option-list">
+      <button class="option-btn" id="go-kitchen-preps"><span>🧪 Заготовки — технички</span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-kitchen-dishes"><span>🍽 Тех.карты блюд</span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-kitchen-storage-rules"><span>📋 Правила подготовки и хранения</span><span class="arrow">›</span></button>
+    </div>
+  </div>
+
+  <!-- SCREEN: kitchen preps (заготовки) list -->
+  <div class="screen" id="screen-kitchen-preps">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-kitchen-preps" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">🧪 Заготовки</div>
+    </div>
+    <div class="form-body">
+      <div class="field-block">
+        <input class="text-input" type="text" id="kitchen-preps-search" placeholder="🔍 Поиск заготовки по названию">
+      </div>
+      <div id="kitchen-preps-list"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN: kitchen prep detail (техничка) -->
+  <div class="screen" id="screen-kitchen-prep-detail">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-kitchen-prep-detail" style="padding:0 0 10px;">← К списку заготовок</div>
+      <div class="top-bar-title" id="kitchen-prep-detail-title">🧪 Заготовка</div>
+    </div>
+    <div class="form-body" id="kitchen-prep-detail-body"></div>
+  </div>
+
+  <!-- SCREEN: kitchen dishes (тех.карты блюд) list -->
+  <div class="screen" id="screen-kitchen-dishes">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-kitchen-dishes" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">🍽 Тех.карты блюд</div>
+    </div>
+    <div class="form-body">
+      <div class="field-block">
+        <input class="text-input" type="text" id="kitchen-dishes-search" placeholder="🔍 Поиск блюда по названию">
+      </div>
+      <div id="kitchen-dishes-list"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN: kitchen dish detail (техничка) -->
+  <div class="screen" id="screen-kitchen-dish-detail">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-kitchen-dish-detail" style="padding:0 0 10px;">← К списку блюд</div>
+      <div class="top-bar-title" id="kitchen-dish-detail-title">🍽 Блюдо</div>
+    </div>
+    <div class="form-body" id="kitchen-dish-detail-body"></div>
+  </div>
+
+  <!-- SCREEN: kitchen request (заявка на продукты) -->
+  <div class="screen" id="screen-kitchen-request">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-kitchen-request" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">📝 Заявка на кухню</div>
+      <div class="top-bar-meta" id="kitchen-request-meta"></div>
+    </div>
+    <div class="form-body">
+
+      <div class="field-block">
+        <div class="field-label">Повар</div>
+        <div class="chip-row" id="kitchen-request-employee-chips"></div>
+        <button class="add-expense-btn" id="kitchen-request-toggle-extra" type="button" style="margin-top:10px;">+ Дополнительный повар</button>
+        <div id="kitchen-request-extra-wrap" style="display:none; margin-top:10px;">
+          <input class="text-input" type="text" id="kitchen-request-extra-name" placeholder="Имя дополнительного повара">
+        </div>
+      </div>
+
+      <div id="kitchen-request-categories"></div>
+
+      <div class="field-block" style="margin-top:20px;">
+        <div class="field-label">💬 Комментарий</div>
+        <textarea class="text-input" id="kitchen-request-comment" rows="2" placeholder="Необязательно" style="resize:vertical;"></textarea>
+      </div>
+
+    </div>
+    <div class="bottom-bar">
+      <div class="finish-hint" id="kitchen-request-hint">Отметьте по каждой позиции: нужно или не нужно</div>
+      <button class="finish-btn" id="kitchen-request-submit">🔒 Отправить заявку</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: kitchen storage rules (справка, не тех.карта) -->
+  <div class="screen" id="screen-kitchen-storage-rules">
+    <div class="top-bar">
+      <div class="back-link" id="back-from-kitchen-storage-rules" style="padding:0 0 10px;">← Назад</div>
+      <div class="top-bar-title">📋 Правила подготовки и хранения</div>
+    </div>
+    <div class="form-body" id="kitchen-storage-rules-body"></div>
   </div>
 
   <!-- SCREEN: shift schedule -->
@@ -407,7 +508,7 @@
       </div>
 
       <div class="field-block" id="swap-who-wrap">
-        <div class="field-label">Кого меняем / убираем со смены</div>
+        <div class="field-label">Кого меняем — бар или повар на кухне</div>
         <div class="chip-row" id="swap-who-chips"></div>
       </div>
 
@@ -611,6 +712,7 @@
       <button class="option-btn" id="go-fruits"><span>🍋 Заявка на фрукты<span class="sub" id="fruits-day-sub" style="display:none;">Доступно по средам</span></span><span class="arrow">›</span></button>
       <button class="option-btn" id="go-infusions"><span>🫙 Заявка на настойки<span class="sub" id="infusions-day-sub" style="display:none;">Доступно по средам</span></span><span class="arrow">›</span></button>
       <button class="option-btn" id="go-custom"><span>📝 Нестандартная заявка</span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-kitchen-request"><span>🍳 Заявка на кухню<span class="sub" id="kitchen-request-day-sub" style="display:none;">Доступно по средам и воскресеньям</span></span><span class="arrow">›</span></button>
     </div>
   </div>
 
@@ -628,6 +730,7 @@
       <button class="option-btn" id="go-fruits-extra"><span>🍋 Заявка на фрукты</span><span class="arrow">›</span></button>
       <button class="option-btn" id="go-infusions-extra"><span>🫙 Заявка на настойки</span><span class="arrow">›</span></button>
       <button class="option-btn" id="go-custom-extra"><span>📝 Нестандартная заявка</span><span class="arrow">›</span></button>
+      <button class="option-btn" id="go-kitchen-request-extra"><span>🍳 Заявка на кухню</span><span class="arrow">›</span></button>
     </div>
   </div>
 
@@ -911,7 +1014,13 @@
         <div id="open-extra-wrap" style="display:none; margin-top:10px;">
           <input class="text-input" type="text" id="open-extra-name" placeholder="Имя дополнительного бармена">
         </div>
-        <div class="field-hint">Можно выбрать любое количество из списка (хоть всех троих), плюс доп. бармена при необходимости</div>
+        <div class="field-hint">Можно выбрать любое количество из списка, плюс доп. бармена при необходимости</div>
+      </div>
+      <div class="field-block">
+        <div class="field-label">Кто сегодня на кухне</div>
+        <div class="chip-row" id="open-kitchen-chips"></div>
+        <button type="button" class="beer-toggle-btn" id="open-kitchen-dayoff" style="margin-top:10px;">Кухня выходной</button>
+        <div class="field-hint">Можно выбрать нескольких поваров, или отметить «Кухня выходной», если сегодня кухня не работает</div>
       </div>
       <div class="field-block">
         <div class="field-label">Касса на начало смены</div>
@@ -1065,11 +1174,17 @@
 </div>
 
 <script>
-const EMPLOYEES = ["Александр", "Николай", "Татьяна"];
+const EMPLOYEES = ["Александр", "Николай", "Татьяна", "Антон"];
 // Раньше график вели под короткими именами (Саша/Коля/Таня), но теперь используем полные
 // имена и там тоже — единый список для всего, что связано с графиком (форма-промт для ИИ,
 // замена/соло-смена), чтобы не плодить одного и того же человека под двумя разными именами.
 const SCHEDULE_STAFF_NAMES = EMPLOYEES;
+// Кто реально входит в барную ротацию при составлении графика на месяц через ИИ — Антон
+// сюда не входит: он отдельно отвечает за кухню (повар) и в баре появляется только иногда,
+// отдельным исключением (барбек), а не по дефолтной ротации. Для всего остального
+// (чипы "кто на смене", замена/соло-смена, кто загрузил график) используется полный
+// SCHEDULE_STAFF_NAMES — там Антон как раз и нужен, когда подменяет кого-то на баре.
+const BAR_SCHEDULE_STAFF_NAMES = EMPLOYEES.filter(n => n !== "Антон");
 const CURRENCY = "₾";
 const MAX_SELECT = EMPLOYEES.length; // можно выбрать всех бартендеров из списка сразу (сейчас их трое)
 
@@ -1079,7 +1194,7 @@ const RELAY_URL = "https://rambling-relay.avikulov91.workers.dev/";
 // Необязательный общий "пароль" запроса — просто фильтр от случайных чужих запросов
 // к публичному URL Worker'а, не настоящая защита токена (токен бота нигде в этом файле не хранится).
 // Совпадает со значением APP_SECRET, которое задаётся в настройках Worker'а в Cloudflare.
-const RELAY_APP_SECRET = "";
+const RELAY_APP_SECRET = "o82NtQFEV9qomQec3UnTdODVmo5hcYdI";
 
 async function sendReportToTelegram(text, type, entry){
   const statusEl = document.getElementById("send-status");
@@ -1231,6 +1346,16 @@ function getNames(selectedSet, prefix){
 
 /* ---------- OPEN SHIFT ---------- */
 let openSelected = new Set();
+let openKitchenSelected = new Set();
+let openKitchenDayOff = false;
+
+function refreshOpenKitchenUI(){
+  const chipsEl = document.getElementById("open-kitchen-chips");
+  const btn = document.getElementById("open-kitchen-dayoff");
+  btn.classList.toggle("active-notneed", openKitchenDayOff);
+  btn.textContent = openKitchenDayOff ? "✓ Кухня выходной" : "Кухня выходной";
+  chipsEl.style.display = openKitchenDayOff ? "none" : "flex";
+}
 
 function openReady(){
   return getNames(openSelected, "open").length > 0 && num(document.getElementById("open-cash").value) >= 0 && document.getElementById("open-cash").value !== "";
@@ -1250,6 +1375,14 @@ document.getElementById("go-open").addEventListener("click", () => {
 document.getElementById("back-from-open").addEventListener("click", () => showScreen("screen-menu"));
 renderChips("open-employee-chips", openSelected, refreshOpenHint);
 setupExtraToggle("open", refreshOpenHint);
+renderChips("open-kitchen-chips", openKitchenSelected, () => {});
+refreshOpenKitchenUI();
+document.getElementById("open-kitchen-dayoff").addEventListener("click", () => {
+  openKitchenDayOff = !openKitchenDayOff;
+  if (openKitchenDayOff) openKitchenSelected.clear();
+  renderChips("open-kitchen-chips", openKitchenSelected, () => {});
+  refreshOpenKitchenUI();
+});
 document.getElementById("open-cash").addEventListener("input", refreshOpenHint);
 setupCashCalculator({
   fieldId: "open-cash",
@@ -1272,13 +1405,19 @@ document.getElementById("open-submit").addEventListener("click", () => {
   }
   const names = getNames(openSelected, "open").join(", ");
   const cash = num(document.getElementById("open-cash").value);
-  const text =
+  let text =
 `rambling :
 🟢 Открытие кассы — Rambling
 Кто на смене: ${names}
 Дата: ${formatDateRu()}
 Время: ${nowTimeStr()}
 Касса на начало: ${fmt(cash)}`;
+  if (openKitchenDayOff){
+    text += `\nКухня сегодня: выходной`;
+  } else {
+    const kitchenNames = Array.from(openKitchenSelected).join(", ");
+    if (kitchenNames) text += `\nКухня сегодня: ${kitchenNames}`;
+  }
 
   document.getElementById("done-badge").textContent = "🟢";
   document.getElementById("done-title").textContent = "Касса открыта";
@@ -9393,6 +9532,7 @@ const EXTRA_PROCUREMENT_MAP = {
   "go-fruits-extra": "go-fruits",
   "go-infusions-extra": "go-infusions",
   "go-custom-extra": "go-custom",
+  "go-kitchen-request-extra": "go-kitchen-request",
 };
 Object.entries(EXTRA_PROCUREMENT_MAP).forEach(([extraId, realId]) => {
   document.getElementById(extraId).addEventListener("click", () => {
@@ -9412,6 +9552,9 @@ const PROCUREMENT_SECTIONS = [
   { btnId: "go-herbs", subId: "herbs-day-sub", allowed: isSunday() },
   { btnId: "go-alcohol", subId: "alcohol-day-sub", allowed: isSunday() },
   { btnId: "go-household", subId: "household-day-sub", allowed: isSunday() },
+  // "Заявка на кухню" — доступна в оба дня заявок (и среда, и воскресенье), в отличие от
+  // остальных разделов выше, у каждого из которых только один свой день.
+  { btnId: "go-kitchen-request", subId: "kitchen-request-day-sub", allowed: isProcurementDay() },
 ];
 PROCUREMENT_SECTIONS.forEach(({ btnId, subId, allowed }) => {
   if (!allowed){
@@ -9428,6 +9571,7 @@ const PROCUREMENT_LABELS = {
   "go-herbs": "🌿 Зелень",
   "go-alcohol": "🥃 Алкоголь",
   "go-household": "🧽 Хозтовары",
+  "go-kitchen-request": "🍳 Кухня",
 };
 const DOW_NAMES_RU = ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"];
 const dueSectionLabels = PROCUREMENT_SECTIONS.filter(s => s.allowed).map(s => PROCUREMENT_LABELS[s.btnId]);
@@ -12056,6 +12200,32 @@ function renderOffBadge(name){
   return `<div style="margin-top:8px; display:inline-block; background: var(--red-dim); color: var(--red); border-radius:999px; padding:4px 12px; font-size:13px; font-weight:700;">🧍 ${name} — выходной</div>`;
 }
 
+// "Повар" в графике — отдельная от барной ротации роль. По умолчанию (без явной замены)
+// на кухне Антон, по дням, когда кухня работает (со среды по воскресенье — выходные дни
+// кухни пн и вт), начиная с KITCHEN_COOK_START_DATE. Явная замена повара (через «Замена»
+// на карточке дня) хранится в entry.cook и имеет приоритет перед дефолтным правилом —
+// так временная подмена (другой бармен или внештатный человек) не стирается при каждом
+// рендере, а дефолт просто не навязывается там, где уже есть явное решение на день.
+const KITCHEN_COOK_DEFAULT_NAME = "Антон";
+const KITCHEN_COOK_START_DATE = "2026-11-11"; // Антон на кухне со среды 11 ноября 2026
+
+function isKitchenScheduleDay(dateStr){
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dow = new Date(y, m - 1, d).getDay(); // 0=вс,1=пн,2=вт,3=ср,4=чт,5=пт,6=сб
+  return dow !== 1 && dow !== 2; // кухня закрыта в пн и вт
+}
+
+function cookForDate(entry, dateStr){
+  if (entry && entry.cook) return entry.cook;
+  if (dateStr < KITCHEN_COOK_START_DATE) return undefined;
+  return isKitchenScheduleDay(dateStr) ? KITCHEN_COOK_DEFAULT_NAME : undefined;
+}
+
+function renderCookRow(cookName){
+  if (!cookName) return "";
+  return `<div class="sum-row" style="margin-top:4px;"><span class="value" style="text-align:left; color: var(--text);">🍳 Повар: ${cookName}</span></div>`;
+}
+
 function renderSchedule(){
   const container = document.getElementById("schedule-list");
   container.innerHTML = "";
@@ -12069,6 +12239,9 @@ function renderSchedule(){
   // Закреплённая карточка "Сегодня" сверху (с мини-календарём внутри) — показывается всегда,
   // даже если график на сегодня ещё не загружен, просто для ориентира по дате.
   const todayEntry = upcoming.find(e => e.date === today);
+  // Повар считается отдельно от того, загружен ли барный график на сегодня — кухонная
+  // ротация (дефолт Антон ср–вс) не зависит от того, успели ли залить барный график.
+  const todayCook = cookForDate(todayEntry, today);
   const summary = document.createElement("div");
   summary.className = "sum-card";
   summary.style.cssText = "margin-bottom:16px; border:2px solid var(--red); background: var(--surface-2);";
@@ -12079,8 +12252,12 @@ function renderSchedule(){
     ${todayEntry ? `
       <div class="sum-row"><span class="value" style="text-align:left; color: var(--text);">👥 Работают: ${todayEntry.staff.join(", ") || "—"}</span></div>
       ${renderOffBadge(todayEntry.off)}
+      ${renderCookRow(todayCook)}
       <div><button class="chip" type="button" data-swap-date="${today}" style="margin-top:10px; font-size:13px; padding:6px 12px;">🔄 Замена</button></div>
-    ` : `<div class="field-hint" style="margin-top:2px;">График на сегодня ещё не загружен</div>`}
+    ` : `
+      <div class="field-hint" style="margin-top:2px;">График на сегодня ещё не загружен</div>
+      ${renderCookRow(todayCook)}
+    `}
   `;
   container.appendChild(summary);
 
@@ -12116,12 +12293,14 @@ function renderSchedule(){
     }
     const todayBadge = isToday ? ` <span style="color: var(--red); font-weight:800;">· сегодня</span>` : "";
     const weekendBadge = isCalendarWeekend ? ` <span style="color: var(--amber); font-weight:800;">· 📅 календарный выходной</span>` : "";
+    const cookName = cookForDate(entry, entry.date);
     card.innerHTML = `
       <div class="sum-row" style="margin-bottom:6px;">
         <span class="label" style="font-weight:800; color: var(--text);"><span style="text-transform:capitalize;">${formatScheduleDate(entry.date)}</span>${todayBadge}${weekendBadge}</span>
       </div>
       <div class="sum-row"><span class="value" style="text-align:left; color: var(--text);">👥 ${entry.staff.join(", ") || "—"}</span></div>
       ${renderOffBadge(entry.off)}
+      ${renderCookRow(cookName)}
       <div><button class="chip" type="button" data-swap-date="${entry.date}" style="margin-top:10px; font-size:13px; padding:6px 12px;">🔄 Замена</button></div>
     `;
     container.appendChild(card);
@@ -12205,12 +12384,14 @@ function renderScheduleArchive(){
       card.style.borderLeft = "2px solid var(--red)";
     }
     const todayBadge = isToday ? ` <span style="color: var(--red); font-weight:800;">· сегодня</span>` : "";
+    const cookName = cookForDate(entry, entry.date);
     card.innerHTML = `
       <div class="sum-row" style="margin-bottom:6px;">
         <span class="label" style="font-weight:800; color: var(--text);"><span style="text-transform:capitalize;">${formatScheduleDate(entry.date)}</span>${todayBadge}</span>
       </div>
       <div class="sum-row"><span class="value" style="text-align:left; color: var(--text);">👥 ${entry.staff.join(", ") || "—"}</span></div>
       ${renderOffBadge(entry.off)}
+      ${renderCookRow(cookName)}
     `;
     container.appendChild(card);
   });
@@ -12219,6 +12400,9 @@ function renderScheduleArchive(){
 document.getElementById("go-schedule-archive").addEventListener("click", () => {
   renderScheduleArchive();
   showScreen("screen-schedule-archive");
+  // Подтягиваем актуальный график (включая замены, сделанные с других устройств) —
+  // иначе архив мог бы показывать то, что загружено только локально в этой сессии.
+  fetchStoredSchedule().then(renderScheduleArchive);
 });
 document.getElementById("back-from-schedule-archive").addEventListener("click", () => showScreen("screen-schedule"));
 
@@ -12279,7 +12463,7 @@ function buildScheduleFormPrompt(){
   const monthName = monthWord.charAt(0).toUpperCase() + monthWord.slice(1);
   const monthGenitive = MONTH_NAMES_RU[month];        // родительный: "ноября" (для "15 ноября")
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const employeesList = SCHEDULE_STAFF_NAMES.join(", ");
+  const employeesList = BAR_SCHEDULE_STAFF_NAMES.join(", ");
 
   // Пример на первые ~9 дней месяца — с настоящими днями недели этого месяца и пустой
   // строкой после каждого воскресенья, чтобы правило было видно на деле, а не только в тексте.
@@ -12298,6 +12482,7 @@ function buildScheduleFormPrompt(){
   return `Ты формируешь график смен бара Rambling на ${monthName} ${year} (всего дней в месяце: ${daysInMonth}).
 
 СОТРУДНИКИ: ${employeesList} (если нужен внештатный человек на замену — впиши его имя как есть).
+Антон в эту ротацию не входит — он отдельно отвечает за кухню (повар) и работает только там; в баре появляется очень редко и отдельно, когда нужно подменить барбеком — в график бара его не ставь.
 
 ПРАВИЛА СОСТАВЛЕНИЯ ГРАФИКА:
 
@@ -12545,6 +12730,10 @@ ${names ? "Кто загрузил: " + names + "\n" : ""}Дата: ${formatDate
 let swapSelectedWho = null;
 let swapMode = null; // "replace" | "solo"
 let swapReplacementSelected = null;
+// Отдельно отмечаем, что меняем именно повара на кухне, а не барную смену — у повара нет
+// "соло" (это не про то, работает ли он один) и список "на кого меняем" берётся из всех
+// сотрудников, а не из тех, кто в этот день на барной смене.
+let swapTargetIsCook = false;
 
 // Все даты графика (и прошлые, и будущие) — замену/соло-смену можно оформить на любой уже
 // загруженный день, не только на предстоящий.
@@ -12571,7 +12760,8 @@ function populateSwapDateSelect(presetDate){
   all.forEach(e => {
     const opt = document.createElement("option");
     opt.value = e.date;
-    opt.textContent = `${formatScheduleDate(e.date)} — ${e.staff.join(", ")}`;
+    const cookName = cookForDate(e, e.date);
+    opt.textContent = `${formatScheduleDate(e.date)} — ${e.staff.join(", ")}${cookName ? " · 🍳 " + cookName : ""}`;
     select.appendChild(opt);
   });
   if (presetDate && all.some(e => e.date === presetDate)){
@@ -12595,11 +12785,15 @@ function renderSwapWhoChips(){
   swapSelectedWho = null;
   swapMode = null;
   swapReplacementSelected = null;
+  swapTargetIsCook = false;
   document.getElementById("swap-mode-block").style.display = "none";
   document.getElementById("swap-replacement-block").style.display = "none";
   document.getElementById("swap-mode-replace").classList.remove("selected");
   document.getElementById("swap-mode-solo").classList.remove("selected");
+  document.getElementById("swap-mode-solo").style.display = "";
   if (!entry) { updateSwapHint(); return; }
+
+  // Выбор "кого меняем" на барную смену — обычная замена/соло, как и раньше.
   entry.staff.forEach(name => {
     const chip = document.createElement("button");
     chip.className = "chip";
@@ -12607,10 +12801,12 @@ function renderSwapWhoChips(){
     chip.textContent = name;
     chip.addEventListener("click", () => {
       swapSelectedWho = name;
+      swapTargetIsCook = false;
       [...container.children].forEach(c => c.classList.toggle("selected", c === chip));
       swapMode = null;
       swapReplacementSelected = null;
       document.getElementById("swap-mode-block").style.display = "block";
+      document.getElementById("swap-mode-solo").style.display = "";
       document.getElementById("swap-replacement-block").style.display = "none";
       document.getElementById("swap-mode-replace").classList.remove("selected");
       document.getElementById("swap-mode-solo").classList.remove("selected");
@@ -12618,6 +12814,29 @@ function renderSwapWhoChips(){
     });
     container.appendChild(chip);
   });
+
+  // Отдельный чип для повара (если на эту дату он есть — дефолт или уже оформленная
+  // замена). У повара нет "соло" — сразу переходим к выбору "на кого меняем".
+  const cookName = cookForDate(entry, entry.date);
+  if (cookName){
+    const cookChip = document.createElement("button");
+    cookChip.className = "chip";
+    cookChip.type = "button";
+    cookChip.textContent = `🍳 ${cookName} (повар)`;
+    cookChip.addEventListener("click", () => {
+      swapSelectedWho = cookName;
+      swapTargetIsCook = true;
+      swapMode = "replace";
+      swapReplacementSelected = null;
+      [...container.children].forEach(c => c.classList.toggle("selected", c === cookChip));
+      document.getElementById("swap-mode-block").style.display = "none";
+      document.getElementById("swap-replacement-block").style.display = "block";
+      renderSwapReplacementChips();
+      updateSwapHint();
+    });
+    container.appendChild(cookChip);
+  }
+
   updateSwapHint();
 }
 
@@ -12626,7 +12845,9 @@ function renderSwapReplacementChips(){
   const container = document.getElementById("swap-replacement-chips");
   container.innerHTML = "";
   if (!entry) return;
-  const exclude = new Set(entry.staff);
+  // На барную смену — список без тех, кто уже работает в этот день; на повара — список
+  // без текущего повара (не предлагаем "заменить на самого себя").
+  const exclude = swapTargetIsCook ? new Set([swapSelectedWho]) : new Set(entry.staff);
   SCHEDULE_STAFF_NAMES.filter(n => !exclude.has(n)).forEach(name => {
     const chip = document.createElement("button");
     chip.className = "chip";
@@ -12636,7 +12857,7 @@ function renderSwapReplacementChips(){
       swapReplacementSelected = name;
       document.getElementById("swap-extra-name").value = "";
       document.getElementById("swap-extra-wrap").style.display = "none";
-      document.getElementById("swap-toggle-extra").textContent = "+ Другой бармен";
+      document.getElementById("swap-toggle-extra").textContent = swapTargetIsCook ? "+ Другой повар" : "+ Другой бармен";
       [...container.children].forEach(c => c.classList.toggle("selected", c === chip));
       updateSwapHint();
     });
@@ -12677,6 +12898,7 @@ document.getElementById("swap-mode-replace").addEventListener("click", () => {
   document.getElementById("swap-mode-replace").classList.add("selected");
   document.getElementById("swap-mode-solo").classList.remove("selected");
   document.getElementById("swap-replacement-block").style.display = "block";
+  renderSwapReplacementChips();
   updateSwapHint();
 });
 document.getElementById("swap-mode-solo").addEventListener("click", () => {
@@ -12704,12 +12926,32 @@ document.getElementById("swap-submit").addEventListener("click", () => {
   const extra = getExtraName("swap");
   const replacementName = swapMode === "replace" ? (extra || swapReplacementSelected) : null;
 
+  if (swapTargetIsCook){
+    // Замена повара — бар в этот день не трогаем, меняем только entry.cook.
+    const updatedEntry = { date, staff: entry.staff, off: entry.off, cook: replacementName };
+    scheduleEntries = mergeScheduleEntries(scheduleEntries, [updatedEntry]);
+    renderSchedule();
+
+    const text = `rambling :
+🍳 Замена повара — Rambling
+${formatScheduleDate(date)}: ${swapSelectedWho} → ${replacementName}
+Дата: ${formatDateRu()}
+Время: ${nowTimeStr()}`;
+
+    document.getElementById("done-badge").textContent = "🍳";
+    document.getElementById("done-title").textContent = "Замена повара оформлена";
+    document.getElementById("msg-preview").textContent = text;
+    showScreen("screen-done");
+    sendReportToTelegram(text, "schedule_update", { entries: [updatedEntry], by: "" });
+    return;
+  }
+
   let newStaff = entry.staff.filter(n => n !== swapSelectedWho);
   if (swapMode === "replace") newStaff.push(replacementName);
   let newOff = entry.off;
   if (swapMode === "replace" && newOff === replacementName) newOff = undefined; // тот, кто был выходной, теперь вышел подменить
 
-  const updatedEntry = { date, staff: newStaff, off: newOff };
+  const updatedEntry = { date, staff: newStaff, off: newOff, cook: entry.cook };
   scheduleEntries = mergeScheduleEntries(scheduleEntries, [updatedEntry]);
   renderSchedule();
 
@@ -13004,6 +13246,569 @@ document.getElementById("infusions-submit").addEventListener("click", () => {
   showScreen("screen-done");
   sendReportToTelegram(text, "request");
 });
+
+/* ---------- KITCHEN: root submenu ---------- */
+document.getElementById("go-kitchen").addEventListener("click", () => showScreen("screen-kitchen"));
+document.getElementById("back-from-kitchen").addEventListener("click", () => showScreen("screen-root"));
+
+/* ---------- KITCHEN: заготовки (preparations) ---------- */
+const KITCHEN_PREP_RECIPES = [
+  {
+    name: "Ростбиф (для Летника)",
+    icon: "🥩",
+    ingredients: [
+      { name: "Говядина", amount: "1000 г" },
+      { name: "Розмарин", amount: "6 г" },
+      { name: "Перец чёрный молотый", amount: "1,5 г" },
+      { name: "Кориандр", amount: "0,4 г" },
+      { name: "Хлопья перца чили", amount: "1,5 г" },
+      { name: "Соль", amount: "4 г" },
+      { name: "Оливковое масло", amount: "2 ст. л" },
+      { name: "Рисовый уксус", amount: "5 мл" },
+      { name: "Вустерский соус", amount: "10 мл" },
+      { name: "Чеснок", amount: "2 зубчика" },
+    ],
+    method: [
+      "Мясо почистить от жира, натереть специями, положить в сувидный пакет",
+      "Собрать в одной полусфере масло, соусы, уксус и выдавленный чеснок, замешать массу",
+      "Залить в сувидный пакет и поставить на 55 градусов на 6,5 часов",
+      "Достать из сувидного пакета, хорошо обсушить бумажными полотенцами, почистить от розмарина",
+      "Максимально разогреть сухую сковородку и на сухой сковородке обжарить по 15 секунд с каждой стороны",
+      "Дать остыть мясу",
+      "Каждый кусок замотать в пищевую плёнку и убрать в морозилку",
+      "После заморозки нарезать на слайсере порционно (40 г) и каждую порцию упаковать в пищевую плёнку",
+    ],
+    yield: "≈ 700 г",
+  },
+  {
+    name: "Соус манго-чили",
+    icon: "🍤",
+    ingredients: [
+      { name: "Кленовый сироп", amount: "12 г" },
+      { name: "Рисовый уксус", amount: "2 г" },
+      { name: "Шрирача", amount: "2 г" },
+      { name: "Кетчуп", amount: "12 г" },
+      { name: "Манго-чили", amount: "12 г" },
+      { name: "Соевый соус", amount: "10 г" },
+      { name: "Масло подсолнечное", amount: "5 г" },
+    ],
+    method: [
+      "Соединить все ингредиенты",
+      "Взбить венчиком до однородности",
+    ],
+    yield: "на 10 шт креветок",
+  },
+  {
+    // В блюде "Вителло тоннато" этот соус упоминается как "Соус тоннато" (см. KITCHEN_PREP_ALIASES) —
+    // это один и тот же соус, просто с двумя названиями.
+    name: "Соус вителло",
+    icon: "🐟",
+    ingredients: [
+      { name: "Майонез", amount: "1000 г" },
+      { name: "Оливки без косточек", amount: "80 г" },
+      { name: "Чеснок", amount: "20 г" },
+      { name: "Оливковое масло", amount: "20 г" },
+      { name: "Тунец", amount: "130 г" },
+      { name: "Вустерский соус", amount: "80 г" },
+      { name: "Соевый соус", amount: "5,5 г" },
+      { name: "Каперсы", amount: "80 г" },
+    ],
+    method: [
+      "Соединить все ингредиенты в блендере",
+      "Пробить до однородной массы",
+    ],
+    yield: "≈ 1350 г",
+  },
+];
+const KITCHEN_PREP_BY_NAME = {};
+KITCHEN_PREP_RECIPES.forEach(p => { KITCHEN_PREP_BY_NAME[p.name] = p; });
+const KITCHEN_PREPS_SORTED = [...KITCHEN_PREP_RECIPES].sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+
+// Сопоставление названия ингредиента в тех.карте блюда с названием заготовки — так же, как
+// PREP_ALIASES работает для коктейлей. Заполняется вручную по мере добавления заготовок;
+// если ингредиент не найден здесь, он просто показывается обычным текстом, без ссылки на попап.
+const KITCHEN_PREP_ALIASES = {
+  "ростбиф": "Ростбиф (для Летника)",
+  "соус": "Соус манго-чили",
+  "соус манго-чили": "Соус манго-чили",
+  "соус тоннато": "Соус вителло",
+};
+function findKitchenPrepForIngredient(ingName){
+  const key = (ingName || "").trim().toLowerCase();
+  const prepName = KITCHEN_PREP_ALIASES[key];
+  if (!prepName) return null;
+  return KITCHEN_PREP_BY_NAME[prepName] || null;
+}
+function renderKitchenIngredientRow(ing){
+  const prep = findKitchenPrepForIngredient(ing.name);
+  const nameHtml = prep
+    ? `<span class="label prep-ing-name prep-link" data-kitchen-prep="${prep.name}">${ing.name} 🧪</span>`
+    : `<span class="label">${ing.name}</span>`;
+  return `<div class="sum-row">${nameHtml}<span class="value">${ing.amount || "—"}</span></div>`;
+}
+function openKitchenPrepModal(prepName){
+  const p = KITCHEN_PREP_BY_NAME[prepName];
+  if (!p) return;
+  document.getElementById("prep-modal-title").textContent = `🧪 ${p.name}`;
+  let html = `<div class="section-title">Состав</div><div class="sum-card">`;
+  p.ingredients.forEach(ing => {
+    html += `<div class="sum-row"><span class="label">${ing.name}</span><span class="value">${ing.amount || "—"}</span></div>`;
+  });
+  html += `</div>`;
+  if (p.method && p.method.length){
+    html += `<div class="section-title" style="margin-top:18px;">👨‍🍳 Приготовление</div>`;
+    p.method.forEach((step, i) => {
+      html += `<div class="sum-card" style="margin-top:8px;"><div class="sum-row"><span class="label">${i+1}. ${step}</span></div></div>`;
+    });
+  }
+  if (p.yield){
+    html += `<div class="field-hint" style="margin-top:8px;">Выход: ${p.yield}</div>`;
+  }
+  document.getElementById("prep-modal-body").innerHTML = html;
+  document.getElementById("prep-modal-backdrop").classList.add("active");
+}
+
+function renderKitchenPrepsList(filterText){
+  const container = document.getElementById("kitchen-preps-list");
+  container.innerHTML = "";
+  const variants = searchVariants(filterText);
+  const list = KITCHEN_PREPS_SORTED.filter(p => {
+    if (!variants.length) return true;
+    const nm = normalizeForSearch(p.name);
+    return variants.some(v => nm.includes(v));
+  });
+  if (KITCHEN_PREPS_SORTED.length === 0){
+    container.innerHTML = `<div class="field-hint" style="padding:10px 0;">Техничек пока нет — они появятся здесь по мере добавления.</div>`;
+    return;
+  }
+  if (list.length === 0){
+    container.innerHTML = `<div class="field-hint" style="padding:10px 0;">Ничего не найдено</div>`;
+    return;
+  }
+  list.forEach(p => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "option-btn";
+    btn.style.marginBottom = "10px";
+    btn.innerHTML = `<span>${p.icon || '🧪'} ${p.name}</span><span class="arrow">›</span>`;
+    btn.addEventListener("click", () => openKitchenPrepDetail(p.name));
+    container.appendChild(btn);
+  });
+}
+function openKitchenPrepDetail(name){
+  const p = KITCHEN_PREP_BY_NAME[name];
+  if (!p) return;
+  document.getElementById("kitchen-prep-detail-title").textContent = `${p.icon || "🧪"} ${p.name}`;
+  const body = document.getElementById("kitchen-prep-detail-body");
+  let html = `<div class="section-title">🧾 Состав</div><div class="sum-card">`;
+  p.ingredients.forEach(ing => {
+    html += `<div class="sum-row"><span class="label">${ing.name}</span><span class="value">${ing.amount || "—"}</span></div>`;
+  });
+  html += `</div>`;
+  if (p.method && p.method.length){
+    html += `<div class="section-title" style="margin-top:22px;">👨‍🍳 Приготовление</div>`;
+    p.method.forEach((step, i) => {
+      html += `<div class="sum-card" style="margin-top:8px;"><div class="sum-row"><span class="label">${i+1}. ${step}</span></div></div>`;
+    });
+  } else {
+    html += `<div class="field-hint" style="margin-top:8px;">Описание приготовления пока не добавлено</div>`;
+  }
+  if (p.yield){
+    html += `<div class="field-hint" style="margin-top:8px;">Выход: ${p.yield}</div>`;
+  }
+  body.innerHTML = html;
+  showScreen("screen-kitchen-prep-detail");
+}
+document.getElementById("go-kitchen-preps").addEventListener("click", () => {
+  document.getElementById("kitchen-preps-search").value = "";
+  renderKitchenPrepsList("");
+  showScreen("screen-kitchen-preps");
+});
+document.getElementById("back-from-kitchen-preps").addEventListener("click", () => showScreen("screen-kitchen"));
+document.getElementById("back-from-kitchen-prep-detail").addEventListener("click", () => showScreen("screen-kitchen-preps"));
+document.getElementById("kitchen-preps-search").addEventListener("input", e => renderKitchenPrepsList(e.target.value));
+
+/* ---------- KITCHEN: тех.карты блюд (dishes) ---------- */
+const KITCHEN_DISH_RECIPES = [
+  {
+    name: "Креветки жареные",
+    icon: "🍤",
+    tag: "hot / airfry",
+    portion: "1 порция",
+    ingredients: [
+      { name: "Креветки", amount: "10 шт" },
+      { name: "Соус", amount: "45 г" },
+    ],
+    steps: [
+      "Креветки разморозить и очистить, оставить хвосты",
+      "Обмакнуть в соус",
+      "Готовить в аэрогриле при 190°C — 5 минут",
+      "Двойная порция — 6 минут",
+    ],
+  },
+  {
+    name: "Брускетта с креветками",
+    icon: "🍤",
+    ingredients: [
+      { name: "Чиабатта", amount: "2 шт" },
+      { name: "Лабне", amount: "40 г" },
+      { name: "Креветки", amount: "4 шт" },
+      { name: "Соус манго-чили", amount: "по вкусу" },
+      { name: "Апельсин (дольки)", amount: "3 шт (2 на брускетту + 1 для подачи)" },
+      { name: "Цедра апельсина", amount: "для посыпки" },
+      { name: "Кинза", amount: "для посыпки" },
+    ],
+    steps: [
+      "Креветки (4 шт) разрезать пополам и обжарить в соусе манго-чили",
+      "Чиабатту (2 шт) смазать лабне (40 г)",
+      "2 дольки апельсина разрезать на 3 части каждую",
+      "Выложить на лабне креветки, чередуя с кусочками апельсина",
+      "Полить соусом манго-чили",
+      "Посыпать сверху цедрой апельсина и кинзой",
+    ],
+    serving: [
+      "Подать с долькой апельсина рядом с брускеттой",
+    ],
+  },
+  {
+    name: "Намазка к вину",
+    icon: "🧀",
+    ingredients: [
+      { name: "Сливочный сыр", amount: "100 г" },
+      { name: "Тыквенные семечки", amount: "4 г" },
+      { name: "Оливки", amount: "6 шт (~25 г)" },
+      { name: "Свежий помидор", amount: "35 г" },
+      { name: "Базилик", amount: "жменька" },
+      { name: "Кинза", amount: "жменька" },
+      { name: "Соус наршараб", amount: "на глазок" },
+      { name: "Шоти", amount: "8 половинок" },
+    ],
+    steps: [
+      "Включить прижимной гриль",
+      "Включить сковородку",
+      "Взять овальную тарелку, сместившись от центра, столовой ложкой красиво размазать сливочный сыр",
+      "На сыр выложить мелко рубленный помидор",
+      "На сухой сковороде пожарить тыквенные семечки примерно 5 минут, затем снять со сковородки",
+      "Пожарить оливки, разрезанные вдоль пополам, до лёгкой корочки",
+      "Выложить оливки сверху на сыр",
+      "Посыпать тыквенными семечками",
+      "Полить всю массу соусом наршараб",
+      "Сверху посыпать мелко рубленным базиликом и кинзой",
+      "Подогреть 8 ломтиков (половинок) шоти и выложить на второй половине тарелки",
+    ],
+  },
+  {
+    name: "Брускетта с ростбифом",
+    icon: "🥖",
+    portion: "2 шт — все ингредиенты делятся пополам на 2 хлеба (~120–130 г)",
+    ingredients: [
+      { name: "Соус песто", amount: "12 г" },
+      { name: "Вяленые томаты", amount: "4 шт" },
+      { name: "Ростбиф", amount: "40 г" },
+      { name: "Пармезан", amount: "4 г" },
+      { name: "Базилик свежий", amount: "щепотка" },
+      { name: "Соус тоннато", amount: "по вкусу" },
+    ],
+    steps: [
+      "Чиабатту обжарить на прижимном гриле до хрустящей корочки",
+      "Намазать по 6 г соуса песто на каждый ломтик",
+      "Нарезать вяленые томаты и выложить сверху",
+      "Равномерно распределить ростбиф (по 20 г на ломтик)",
+      "Натереть сверху пармезан",
+      "Украсить мелко нарезанным базиликом",
+      "Полить тонкой линией соусом тоннато",
+    ],
+  },
+  {
+    name: "Вителло тоннато",
+    icon: "🥩",
+    tag: "hot / plate",
+    portion: "~125–140 г",
+    ingredients: [
+      { name: "Соус тоннато", amount: "50 г" },
+      { name: "Ростбиф", amount: "60 г" },
+      { name: "Пармезан", amount: "10 г" },
+      { name: "Каперсы", amount: "5 г" },
+      { name: "Шоти", amount: "3 шт" },
+    ],
+    steps: [
+      "Выложить соус на тарелку",
+      "Сверху выложить ростбиф",
+      "Посыпать пармезаном",
+      "Добавить каперсы",
+      "Шоти обжарить на гриле — 30 секунд",
+    ],
+    serving: [
+      "Шоти выложить рядом",
+      "Подать стаканчик с приборами и салфетками",
+    ],
+  },
+];
+const KITCHEN_DISH_BY_NAME = {};
+KITCHEN_DISH_RECIPES.forEach(d => { KITCHEN_DISH_BY_NAME[d.name] = d; });
+const KITCHEN_DISHES_SORTED = [...KITCHEN_DISH_RECIPES].sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+
+function renderKitchenDishesList(filterText){
+  const container = document.getElementById("kitchen-dishes-list");
+  container.innerHTML = "";
+  const variants = searchVariants(filterText);
+  const list = KITCHEN_DISHES_SORTED.filter(d => {
+    if (!variants.length) return true;
+    const nm = normalizeForSearch(d.name);
+    return variants.some(v => nm.includes(v));
+  });
+  if (KITCHEN_DISHES_SORTED.length === 0){
+    container.innerHTML = `<div class="field-hint" style="padding:10px 0;">Тех.карт пока нет — они появятся здесь по мере добавления.</div>`;
+    return;
+  }
+  if (list.length === 0){
+    container.innerHTML = `<div class="field-hint" style="padding:10px 0;">Ничего не найдено</div>`;
+    return;
+  }
+  list.forEach(d => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "option-btn";
+    btn.style.marginBottom = "10px";
+    btn.innerHTML = `<span>${d.icon || '🍽'} ${d.name}</span><span class="arrow">›</span>`;
+    btn.addEventListener("click", () => openKitchenDishDetail(d.name));
+    container.appendChild(btn);
+  });
+}
+function openKitchenDishDetail(name){
+  const d = KITCHEN_DISH_BY_NAME[name];
+  if (!d) return;
+  document.getElementById("kitchen-dish-detail-title").textContent = `${d.icon || "🍽"} ${d.name}`;
+  const body = document.getElementById("kitchen-dish-detail-body");
+  let html = "";
+  const metaChips = [];
+  if (d.portion) metaChips.push({ icon: "🍽", label: "Выход", value: d.portion });
+  if (d.time) metaChips.push({ icon: "⏱", label: "Время", value: d.time });
+  if (d.tag) metaChips.push({ icon: "🔥", label: "Тип", value: d.tag });
+  if (metaChips.length){
+    html += `<div class="cocktail-meta-row">`;
+    metaChips.forEach(m => {
+      html += `<div class="cocktail-meta-chip"><div class="cocktail-meta-label">${m.icon} ${m.label}</div><div class="cocktail-meta-value">${m.value}</div></div>`;
+    });
+    html += `</div>`;
+  }
+  html += `<div class="section-title">🧾 Состав</div><div class="sum-card">`;
+  d.ingredients.forEach(ing => {
+    html += renderKitchenIngredientRow(ing);
+  });
+  html += `</div>`;
+  if (d.steps && d.steps.length){
+    html += `<div class="section-title" style="margin-top:22px;">👨‍🍳 Приготовление</div>`;
+    d.steps.forEach((step, i) => {
+      html += `<div class="sum-card" style="margin-top:8px;"><div class="sum-row"><span class="label">${i+1}. ${step}</span></div></div>`;
+    });
+  }
+  if (d.serving && d.serving.length){
+    html += `<div class="section-title" style="margin-top:22px;">🍽 Подача</div>`;
+    d.serving.forEach(note => {
+      html += `<div class="sum-card" style="margin-top:8px;"><div class="sum-row"><span class="label">${note}</span></div></div>`;
+    });
+  }
+  body.innerHTML = html;
+  showScreen("screen-kitchen-dish-detail");
+}
+document.getElementById("go-kitchen-dishes").addEventListener("click", () => {
+  document.getElementById("kitchen-dishes-search").value = "";
+  renderKitchenDishesList("");
+  showScreen("screen-kitchen-dishes");
+});
+document.getElementById("back-from-kitchen-dishes").addEventListener("click", () => showScreen("screen-kitchen"));
+document.getElementById("back-from-kitchen-dish-detail").addEventListener("click", () => showScreen("screen-kitchen-dishes"));
+document.getElementById("kitchen-dishes-search").addEventListener("input", e => renderKitchenDishesList(e.target.value));
+document.getElementById("kitchen-dish-detail-body").addEventListener("click", (e) => {
+  const el = e.target.closest(".prep-link");
+  if (el && el.dataset.kitchenPrep) openKitchenPrepModal(el.dataset.kitchenPrep);
+});
+
+/* ---------- KITCHEN: заявка на кухню (чеклист по категориям, как у бара) ---------- */
+const KITCHEN_REQUEST_CATEGORIES = [
+  { title: "🥩 Мясо", items: [
+    { name: "Говядина", supplier: "азеры" },
+    { name: "Креветки" },
+  ]},
+  { title: "🥫 Консервы", items: [
+    { name: "Тунец", supplier: "мелкий турецкий" },
+    { name: "Каперсы", supplier: "мелкий турецкий" },
+  ]},
+  { title: "🥒 Овощи", items: [
+    { name: "Томаты", supplier: "гио" },
+    { name: "Чеснок", supplier: "гио" },
+    { name: "Вяленые томаты" },
+  ]},
+  { title: "🍊 Фрукты", items: [
+    { name: "Апельсины" },
+  ]},
+  { title: "🌿 Зелень и ягоды", items: [
+    { name: "Кинза", supplier: "оранжерея" },
+  ]},
+  { title: "🧀 Молочные продукты и яйца", items: [
+    { name: "Пармезан", supplier: "белорусы" },
+    { name: "Лобне", supplier: "мелкий турецкий" },
+    { name: "Майонез" },
+  ]},
+  { title: "🥖 Хлеб и бакалея", items: [
+    { name: "Шоти", supplier: "в городе" },
+    { name: "Чиабатта", supplier: "в городе" },
+  ]},
+  { title: "🫒 Оливки и масла", items: [
+    { name: "Оливки без косточек", supplier: "мелкий турецкий" },
+    { name: "Оливки гриль" },
+    { name: "Оливковое масло", supplier: "мелкий турецкий" },
+    { name: "Масло подсолнечное рафинированное", supplier: "мелкий турецкий" },
+  ]},
+  { title: "🫙 Соусы, пасты и приправы", items: [
+    { name: "Соевый соус", supplier: "мелкий турецкий" },
+    { name: "Шрирача", supplier: "мелкий турецкий" },
+    { name: "Вустерский соус" },
+    { name: "Манго-чили" },
+    { name: "Рисовый уксус" },
+    { name: "Тыквенные семечки" },
+    { name: "Наршараб" },
+    { name: "Кленовый сироп" },
+    { name: "Кетчуп" },
+  ]},
+  { title: "🌶 Специи", items: [
+    { name: "Соль", supplier: "кондитерка" },
+    { name: "Чёрный перец", supplier: "кондитерка" },
+    { name: "Молотый кориандр", supplier: "кондитерка" },
+    { name: "Сушёный чеснок", supplier: "кондитерка" },
+    { name: "Орегано", supplier: "кондитерка" },
+    { name: "Сахар" },
+    { name: "Розмарин" },
+    { name: "Кориандр" },
+    { name: "Хлопья перца чили" },
+  ]},
+];
+const KITCHEN_REQUEST_ALL_ITEMS = KITCHEN_REQUEST_CATEGORIES.flatMap(c => c.items);
+let kitchenRequestSelected = new Set();
+let kitchenRequestState = {}; // name -> { notneeded, qty }
+
+function renderKitchenRequestCategories(){
+  const container = document.getElementById("kitchen-request-categories");
+  container.innerHTML = "";
+  KITCHEN_REQUEST_CATEGORIES.forEach(cat => {
+    const title = document.createElement("div");
+    title.className = "section-title";
+    title.style.marginTop = "18px";
+    title.textContent = cat.title;
+    container.appendChild(title);
+    cat.items.forEach(item => {
+      const name = item.name;
+      if (!(name in kitchenRequestState)) kitchenRequestState[name] = { notneeded: false, qty: "" };
+      const state = kitchenRequestState[name];
+      const div = document.createElement("div");
+      div.className = "beer-item";
+      div.innerHTML = `
+        <div class="beer-item-name">${name}${item.supplier ? `<span class="beer-item-supplier">Поставщик: ${item.supplier}</span>` : ""}</div>
+        <div class="beer-input-row">
+          <input class="beer-qty-input" type="text" placeholder="Количество / примечание" value="${state.qty}" ${state.notneeded ? "disabled" : ""}>
+          <button type="button" class="beer-toggle-btn${state.notneeded ? " active-notneed" : ""}" data-role="notneed">Не нужно</button>
+        </div>
+      `;
+      div.querySelector('[data-role="notneed"]').addEventListener("click", () => {
+        state.notneeded = !state.notneeded;
+        if (state.notneeded) state.qty = "";
+        renderKitchenRequestCategories();
+        refreshKitchenRequestHint();
+      });
+      const qtyInput = div.querySelector(".beer-qty-input");
+      qtyInput.addEventListener("input", e => { state.qty = e.target.value; refreshKitchenRequestHint(); });
+      container.appendChild(div);
+    });
+  });
+}
+
+function kitchenRequestReady(){
+  return getNames(kitchenRequestSelected, "kitchen-request").length > 0 &&
+    KITCHEN_REQUEST_ALL_ITEMS.every(item => kitchenRequestState[item.name] && (kitchenRequestState[item.name].notneeded || kitchenRequestState[item.name].qty.trim().length > 0)) &&
+    KITCHEN_REQUEST_ALL_ITEMS.some(item => !kitchenRequestState[item.name].notneeded && kitchenRequestState[item.name].qty.trim().length > 0);
+}
+function refreshKitchenRequestHint(){
+  const btn = document.getElementById("kitchen-request-submit");
+  const hint = document.getElementById("kitchen-request-hint");
+  const ready = kitchenRequestReady();
+  btn.classList.toggle("ready", ready);
+  hint.textContent = ready ? "Готово к отправке" : "Отметьте по каждой позиции: нужно или не нужно";
+}
+document.getElementById("go-kitchen-request").addEventListener("click", () => {
+  document.getElementById("kitchen-request-meta").textContent = formatDateRu() + " · " + nowTimeStr();
+  renderKitchenRequestCategories();
+  refreshKitchenRequestHint();
+  showScreen("screen-kitchen-request");
+});
+document.getElementById("back-from-kitchen-request").addEventListener("click", () => showScreen(procurementEntryScreen));
+renderChips("kitchen-request-employee-chips", kitchenRequestSelected, refreshKitchenRequestHint);
+setupExtraToggle("kitchen-request", refreshKitchenRequestHint);
+
+document.getElementById("kitchen-request-submit").addEventListener("click", () => {
+  if (!kitchenRequestReady()){
+    const hint = document.getElementById("kitchen-request-hint");
+    hint.textContent = "Выбери повара и реши по каждой позиции: нужно или не нужно";
+    hint.classList.add("angry");
+    const btn = document.getElementById("kitchen-request-submit");
+    btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
+    return;
+  }
+  const names = getNames(kitchenRequestSelected, "kitchen-request").join(", ");
+  let text = `rambling :\n🍳 Заявка на кухню\nДата: ${formatDateRu()}\nПовар: ${names}`;
+  KITCHEN_REQUEST_CATEGORIES.forEach(cat => {
+    const neededItems = cat.items.filter(item => kitchenRequestState[item.name] && !kitchenRequestState[item.name].notneeded && kitchenRequestState[item.name].qty.trim().length > 0);
+    if (neededItems.length){
+      text += `\n\n${cat.title}`;
+      neededItems.forEach(item => {
+        const s = kitchenRequestState[item.name];
+        text += `\n— ${item.name}${item.supplier ? ` (${item.supplier})` : ""}: ${s.qty}`;
+      });
+    }
+  });
+  const comment = document.getElementById("kitchen-request-comment").value.trim();
+  if (comment) text += `\n\n💬 Комментарий: ${comment}`;
+
+  document.getElementById("done-badge").textContent = "🍳";
+  document.getElementById("done-title").textContent = "Заявка отправлена";
+  document.getElementById("msg-preview").textContent = text;
+  showScreen("screen-done");
+  sendReportToTelegram(text, "request");
+});
+
+/* ---------- KITCHEN: правила подготовки и хранения (справка) ---------- */
+const KITCHEN_STORAGE_RULES = [
+  {
+    name: "Креветки (для салата)",
+    text: "Если не чищенные — пакет с креветками разморозить, почистить (снять панцирь и удалить кишки). Хранить в морозилке.",
+  },
+  {
+    name: "Свежая зелень",
+    text: "Листовой салат/руккола — для салата. Базилик/мята — для соуса песто, посыпки брускетты, намазки из маслин, намазки из нардеги. Кинза — для риета из тунца. Подготовка: разобрать/перебрать, промыть, просушить, сложить в контейнер, сверху накрыть бумажным полотенцем и периодически сбрызгивать водой. Хранить в холодильнике.",
+  },
+  {
+    name: "Ростбиф",
+    text: "Готовый ростбиф заморозить, после заморозки тонко нарезать на слайсере, затем упаковать в пищевую плёнку порционно (порция на брускетту — 40 г). Часть в заморозку, часть в холодильник.",
+  },
+  {
+    name: "Куриный фарш",
+    text: "Следить, чтобы было ок. 1 кг замороженного фарша — примерно 500 г размороженного и примерно 500 г уже зажаренного (готового) фарша.",
+  },
+];
+function renderKitchenStorageRules(){
+  const body = document.getElementById("kitchen-storage-rules-body");
+  let html = "";
+  KITCHEN_STORAGE_RULES.forEach(r => {
+    html += `<div class="section-title" style="margin-top:18px;">${r.name}</div><div class="sum-card"><div class="sum-row"><span class="label">${r.text}</span></div></div>`;
+  });
+  html += `<div class="section-title" style="margin-top:18px; color: var(--amber);">⚠️ Важно</div><div class="sum-card"><div class="sum-row"><span class="label">Продукты, которые заготавливаются и замораживаются/размораживаются — ВСЕГДА МАРКИРОВАТЬ: дата изготовления, если замораживается — дата заморозки, если размораживается — дата разморозки. Пример: «изг. дд.мм.гг», «зам. дд.мм.гг», «разм. дд.мм.гг».</span></div></div>`;
+  body.innerHTML = html;
+}
+document.getElementById("go-kitchen-storage-rules").addEventListener("click", () => {
+  renderKitchenStorageRules();
+  showScreen("screen-kitchen-storage-rules");
+});
+document.getElementById("back-from-kitchen-storage-rules").addEventListener("click", () => showScreen("screen-kitchen"));
 
 document.getElementById("home-btn").addEventListener("click", () => {
   showScreen("screen-root");
